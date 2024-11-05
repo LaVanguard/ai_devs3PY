@@ -7,11 +7,13 @@ from openai import OpenAI
 
 load_dotenv()
 
+# Get Question from existing form
 response = requests.get(os.environ.get("aidevs.xyz_url"))
 session = requests.Session()
 soup = BeautifulSoup(response.text, 'html.parser')
 question = soup.find("p", {"id": "human-question"}).get_text()
 
+# Find answer using llm
 openaiclient = OpenAI(api_key=os.environ.get("openai.api_key"))
 
 completion = openaiclient.chat.completions.create(
@@ -26,6 +28,7 @@ completion = openaiclient.chat.completions.create(
 
 answer = completion.choices[0].message.content.strip()
 
+# submit form with data to bypass security reverse captcha
 username = os.environ.get("aidevs.xyz_login")
 password = os.environ.get("aidevs.xyz_pass")
 form_data = {
