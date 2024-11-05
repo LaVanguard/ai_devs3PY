@@ -21,7 +21,7 @@ completion = openaiclient.chat.completions.create(
             "content": os.environ.get("aidevs.s01e01.prompt") + question,
         }
     ],
-    model="gpt-4o"
+    model=os.environ.get("aidevs.s01e01.model")
 )
 
 answer = completion.choices[0].message.content.strip()
