@@ -3,7 +3,10 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-from openai import OpenAI
+
+from AIService import AIService
+
+PROMPT = "You are a helpful assistant. Provide answer to the question in the format yyyy."
 
 load_dotenv()
 
@@ -14,29 +17,13 @@ soup = BeautifulSoup(response.text, 'html.parser')
 question = soup.find("p", {"id": "human-question"}).get_text()
 
 # Find answer using llm
-openaiclient = OpenAI(api_key=os.environ.get("openai.api_key"))
-
-completion = openaiclient.chat.completions.create(
-    messages=[
-        {
-            "role": "user",
-            "content": os.environ.get("aidevs.s01e01.prompt") + question,
-        }
-    ],
-    model=os.environ.get("aidevs.s01e01.model")
-)
-
-answer = completion.choices[0].message.content.strip()
+answer = AIService().answer(question, PROMPT)  # Find answer using llm
 
 # submit form with data to bypass security reverse captcha
-username = os.environ.get("aidevs.xyz_login")
-password = os.environ.get("aidevs.xyz_pass")
 form_data = {
-    "username": username,
-    "answer": answer,
-    "password": password
+    "username": os.environ.get("aidevs.xyz_login"),
+    "password": os.environ.get("aidevs.xyz_password"),
+    "answer": answer
 }
-response = session.post(os.environ.get("aidevs.xyz_url"),
-                        data=form_data
-                        )
+response = session.post(os.environ.get("aidevs.xyz_url"), data=form_data)
 print(response.text)
