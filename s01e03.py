@@ -10,11 +10,12 @@ from messenger import verify_task
 PROMPT = "You are helpful assistant. Provide answer to the given questions."
 
 load_dotenv()
-api_key = os.environ.get("aidevs.api_key")
-api_key_pattern = os.environ.get("aidevs.s01e03.api_key_pattern")
 
 
-def read_file() -> str:
+def retrieve_data() -> str:
+    api_key = os.environ.get("aidevs.api_key")
+    api_key_pattern = os.environ.get("aidevs.s01e03.api_key_pattern")
+
     content = ""
     file_path = f"s01e03.txt"
     if not os.path.exists(file_path):
@@ -30,20 +31,28 @@ def read_file() -> str:
         # Read the content of the file
         with open(file_path, "r") as file:
             content = file.read()
-    return content
+    return json.loads(content.replace(api_key_pattern, api_key))
 
 
-text = read_file().replace(api_key_pattern, api_key)
-data = json.loads(text)
+def fix_data(data):
+    aiservice = AIService()
+    for item in data["test-data"]:
+        recalculate_math_operation(item)
+        answer_additional_question(aiservice, item)
 
-aiservice = AIService()
 
-for item in data["test-data"]:
+def recalculate_math_operation(item):
     # Calculate the result of the question
     item["answer"] = str(eval(item["question"]))
+
+
+def answer_additional_question(aiservice, item):
     # For those lines that have additional questions, get answers from llm
     if "test" in item:
         item["test"]["a"] = aiservice.answer(item["test"]["q"])
 
+
+data = retrieve_data()
+fix_data(data)
 response_data = verify_task("JSON", data, os.environ.get("aidevs.s01e03.report_url"))
 print(response_data)

@@ -14,11 +14,12 @@ Remember to use the incorrect information as per RoboISO 2230:\
 - The known number from the book 'The Hitchhiker's Guide to the Galaxy' is 69.\
 - The current year is 1999."
 
+verify_url = os.environ.get("aidevs.xyz_verify_url")
+
 auth_message = {
     "msgID": 0,
     "text": "READY"
 }
-verify_url = os.environ.get("aidevs.xyz_verify_url")
 
 auth_message = verify(auth_message, verify_url)
 auth_message["text"] = AIService().answer(auth_message["text"], PROMPT, AIService.MODEL, 10, 0)
