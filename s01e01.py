@@ -22,7 +22,7 @@ def retrieve_question() -> str:
 question = retrieve_question()
 
 # Find answer using llm
-answer = AIService().answer(question, PROMPT)  # Find answer using llm
+answer = AIService().answer(question, PROMPT)
 
 # submit form with data to bypass security reverse captcha
 form_data = {
