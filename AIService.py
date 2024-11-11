@@ -14,6 +14,7 @@ class AIService:
         GPT4o = "openai:gpt-4o"
         GPT4oMINI = "openai:gpt-4o-mini"
         LLAMA32 = "ollama:llama3.2"
+        GEMMA2 = "ollama:gemma2"
 
     PROMPT = "You are helpful assistant. Provide answer to the given questions."
 
