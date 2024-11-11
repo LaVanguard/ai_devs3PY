@@ -38,8 +38,13 @@ WALL = "<td class='wall'></td>"
 DEST = "<td class='destination'></td>"
 ROW = "</tr><tr>"
 
-map = "<table<tbody><tr>.|....@...|..@.|.|..@^....#</tr></tbody></table>"
+MAP = "<table<tbody><tr>.|....@...|..@.|.|..@^....#</tr></tbody></table>"
 
-map = map.replace("^", ROBOT).replace(".", EMPTY).replace("|", WALL).replace("#", DEST).replace("@", ROW)
+
+def toHTMLMap(map) -> str:
+    return map.replace("^", ROBOT).replace(".", EMPTY).replace("|", WALL).replace("#", DEST).replace("@", ROW)
+
+
+map = toHTMLMap(MAP)
 answer = AIService().answer(map, PROMPT, AIService.AIModel.GPT4oMINI, None, 0)
 print(answer)
