@@ -14,13 +14,13 @@ load_dotenv()
 
 def retrieve_data() -> str:
     api_key = os.environ.get("aidevs.api_key")
-    api_key_pattern = os.environ.get("aidevs.s01e03.api_key_pattern")
+    api_key_pattern = os.environ.get("aidevs.api_key_pattern")
 
     content = ""
     file_path = f"s01e03.txt"
     if not os.path.exists(file_path):
         # Fetch the content from the specified URL
-        url = os.environ.get("aidevs.s01e03.file_url_prefix").replace(api_key_pattern, api_key)
+        url = os.environ.get("aidevs.s01e03.file_url_prefix")
         response = requests.get(url)
         content = response.text
 
@@ -54,5 +54,5 @@ def answer_additional_question(aiservice, item):
 
 data = retrieve_data()
 fix_data(data)
-response_data = verify_task("JSON", data, os.environ.get("aidevs.s01e03.report_url"))
+response_data = verify_task("JSON", data, os.environ.get("aidevs.report_url"))
 print(response_data)
