@@ -10,14 +10,15 @@ from messenger import verify_task
 
 FOLDER = "s02e01_files"
 
-PROMPT = "You are a private investigator. Try to provide answer based on the following witness testify transcriptions:\n\n"
+PROMPT = "You are a private investigator. Try to provide answer based on the following witness testify transcriptions. You need to think out loud first to figure out who is right and who is wrong:  \n\n"
+QUESTION = "Na jakiej ulicy znajduje się uczelnia, na której wykłada Andrzej Maj?"
 SUPPORTED_AUDIO_FORMATS = (".mp3", ".wav", ".m4a")
 load_dotenv()
 
 service = AIService()
 
 
-# Step 1: Download the ZIP file
+# Download the ZIP file
 def retrieve_recordings():
     if not os.path.exists(FOLDER):
         resp = requests.get(os.environ.get("aidevs.s02e01.url"))
@@ -27,7 +28,7 @@ def retrieve_recordings():
             zip_ref.extractall(FOLDER)
 
 
-# Step 3: Generate transcriptions from sound files
+# Generate transcriptions from sound files
 def transcribe_audio(file_path):
     with open(file_path, "rb") as audio_file:
         response = service.transcribe(audio_file)
@@ -38,9 +39,7 @@ def is_supported_audio_file(file_name):
     return file_name.lower().endswith(SUPPORTED_AUDIO_FORMATS)
 
 
-# Step 4: Build a common prompt context for all transcriptions
-
-
+# Build a common prompt context for all transcriptions
 def transcribe_files() -> []:
     texts = []
     for root, dirs, files in os.walk(FOLDER):
@@ -54,12 +53,12 @@ def transcribe_files() -> []:
 
 retrieve_recordings()
 transcriptions = transcribe_files()
-common_prompt_context = PROMPT.join("\n".join(transcriptions))
+common_prompt_context = PROMPT + "\n".join(transcriptions)
 print(common_prompt_context)
-question = "na jakiej ulicy znajduje się uczelnia, na której wykłada Andrzej Maj"
-# Find answer using llm
-answer = AIService().answer(question, common_prompt_context)
 
+# Find answer using llm
+answer = AIService().answer(QUESTION, common_prompt_context)
+print(answer)
 response_data = verify_task(
     "mp3", answer, os.environ.get("aidevs.report_url"))
 print(response_data)
