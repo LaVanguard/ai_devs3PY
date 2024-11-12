@@ -12,9 +12,8 @@ load_dotenv()
 
 
 def retrieve_question() -> str:
-    global response, question
-    response = requests.get(os.environ.get("aidevs.xyz_url"))
-    soup = BeautifulSoup(response.text, 'html.parser')
+    text = requests.get(os.environ.get("aidevs.xyz_url")).text
+    soup = BeautifulSoup(text, 'html.parser')
     return soup.find("p", {"id": "human-question"}).get_text()
 
 
