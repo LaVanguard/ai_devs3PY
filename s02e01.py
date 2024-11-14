@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from AIService import AIService
 from messenger import verify_task
 
-FOLDER = "s02e01_files"
+FOLDER = "s02e01"
 
 PROMPT = "You are a private investigator. Try to provide answer based on the following witness testify transcriptions. You need to think out loud first to figure out who is right and who is wrong:  \n\n"
 QUESTION = "Na jakiej ulicy znajduje się uczelnia, na której wykłada Andrzej Maj?"

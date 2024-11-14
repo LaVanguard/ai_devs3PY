@@ -17,7 +17,7 @@ def retrieve_data() -> str:
     api_key_pattern = os.environ.get("aidevs.api_key_pattern")
 
     content = ""
-    file_path = f"s01e03.txt"
+    file_path = f"resources/s01e03/s01e03.txt"
     if not os.path.exists(file_path):
         # Fetch the content from the specified URL
         url = os.environ.get("aidevs.s01e03.file_url_prefix")
