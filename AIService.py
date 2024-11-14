@@ -14,6 +14,7 @@ class AIService:
         DEFAULT = os.environ.get("openai.model")
         GPT4o = "openai:gpt-4o"
         GPT4oMINI = "openai:gpt-4o-mini"
+        DALLE3 = "openai:dall-e-3"
         WHISPER = "openai:whisper-1"
         LLAMA32 = "ollama:llama3.2"
         GEMMA2 = "ollama:gemma2"
@@ -56,6 +57,12 @@ class AIService:
             return self.describeImageOpenAI(image_data, question, prompt, aitype[1], max_tokens, temperature)
         if aitype[0] == "anthropic":
             return self.describeImageAnthropic(image_data, question, prompt, aitype[1], max_tokens, temperature)
+        raise ValueError(f"Unsupported AI model type: {aitype[0]}")
+
+    def generateImage(self, prompt, model=AIModel.DALLE3, size="1024x1024", quality="standard") -> str:
+        aitype = model.value.split(":")
+        if aitype[0] == "openai":
+            return self.generateImageOpenAI(prompt, aitype[1], size, quality)
         raise ValueError(f"Unsupported AI model type: {aitype[0]}")
 
     def answerOpenAI(self, question, prompt, model, max_tokens=None, temperature=None) -> str:
@@ -166,3 +173,14 @@ class AIService:
             ])
         text = message.content[0].text.strip()
         return text
+
+    def generateImageOpenAI(self, prompt, model, size="1024x1024", quality="standard") -> str:
+        response = self._openai_client.images.generate(
+            model=model,
+            prompt=prompt,
+            size=size,
+            quality=quality,
+            n=1
+        )
+        image_url = response.data[0].url
+        return image_url
