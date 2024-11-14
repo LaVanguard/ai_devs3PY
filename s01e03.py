@@ -21,7 +21,7 @@ def retrieve_data() -> str:
 
     if not os.path.exists(file_path):
         # Fetch the content from the specified URL
-        url = os.environ.get("aidevs.s01e03.file_url_prefix")
+        url = os.environ.get("aidevs.s01e03.file_url")
         response = requests.get(url)
         content = response.text
 
