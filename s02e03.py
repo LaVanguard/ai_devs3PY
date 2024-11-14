@@ -18,7 +18,6 @@ def retrieve_data() -> str:
         # Fetch the content from the specified URL
         url = os.environ.get("aidevs.s02e03.url")
         response = requests.get(url)
-        response.encoding = 'utf-8'  # Ensure the response is encoded in UTF-8
         content = response.text
 
         # Create the file and write the content to it

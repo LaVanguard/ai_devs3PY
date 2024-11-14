@@ -27,6 +27,8 @@ class AIService:
     IMG_QUESTION = "What is in the image?"
     MAX_TOKENS = 1024
     TEMPERATURE = 0
+    IMG_TYPE_JPEG = "jpeg"
+    IMG_TYPE_PNG = "png"
 
     def __init__(self, ):
         self._openai_client = OpenAI(api_key=os.environ.get("openai.api_key"))
@@ -49,14 +51,16 @@ class AIService:
             return self.transcribeOpenAI(file, aitype[1])
         raise ValueError(f"Unsupported AI model type: {aitype[0]}")
 
-    def describeImage(self, image_data, question=IMG_QUESTION, prompt=PROMPT, model=AIModel.DEFAULT,
+    def describeImage(self, image_data, data_type=IMG_TYPE_PNG, question=IMG_QUESTION, prompt=PROMPT,
+                      model=AIModel.DEFAULT,
                       max_tokens=1024,
                       temperature=0) -> str:
         aitype = model.value.split(":")
         if aitype[0] == "openai":
-            return self.describeImageOpenAI(image_data, question, prompt, aitype[1], max_tokens, temperature)
+            return self.describeImageOpenAI(image_data, data_type, question, prompt, aitype[1], max_tokens, temperature)
         if aitype[0] == "anthropic":
-            return self.describeImageAnthropic(image_data, question, prompt, aitype[1], max_tokens, temperature)
+            return self.describeImageAnthropic(image_data, data_type, question, prompt, aitype[1], max_tokens,
+                                               temperature)
         raise ValueError(f"Unsupported AI model type: {aitype[0]}")
 
     def generateImage(self, prompt, model=AIModel.DALLE3, size="1024x1024", quality="standard") -> str:
@@ -123,7 +127,8 @@ class AIService:
         )
         return transcription.text
 
-    def describeImageOpenAI(self, image_data, question, prompt, model, max_tokens=None, temperature=None) -> str:
+    def describeImageOpenAI(self, image_data, data_type, question, prompt, model, max_tokens=None,
+                            temperature=None) -> str:
 
         completion = self._openai_client.chat.completions.create(
             model=model,
@@ -135,7 +140,7 @@ class AIService:
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": f"data:image/jpeg;base64,${image_data}",
+                            "url": f"data:image/${data_type};base64,${image_data}",
                             "detail": "high"
                         }
                     },
@@ -148,7 +153,7 @@ class AIService:
         text = completion.choices[0].message.content.strip()
         return text
 
-    def describeImageAnthropic(self, image_data, question, prompt, model, max_tokens=MAX_TOKENS,
+    def describeImageAnthropic(self, image_data, data_type, question, prompt, model, max_tokens=MAX_TOKENS,
                                temperature=TEMPERATURE) -> str:
         message = self._anthropic_client.messages.create(
             model=model,
@@ -162,7 +167,7 @@ class AIService:
                         "type": "image",
                         "source": {
                             "type": "base64",
-                            "media_type": "image/jpeg",
+                            "media_type": f"image/${data_type}",
                             "data": image_data
                         }
                     },

@@ -50,6 +50,7 @@ Fragment 1: Lush Massage
 """
 QUESTION1 = "What is the city name represented by the map fragment in the image?"
 QUESTION2 = "What are the city names represented by the map fragments in the image?"
+FILETYPE = AIService.IMG_TYPE_JPEG
 MODEL = AIService.AIModel.GPT4o
 
 load_dotenv()
@@ -58,7 +59,7 @@ map_fragments = load_map_fragments(directory + "/fragments")
 for image_path in map_fragments:
     with open(image_path, "rb") as image_file:
         image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
-        message = AIService().describeImage(image_base64, QUESTION1, PROMPT1, MODEL, 1024, 0)
+        message = AIService().describeImage(image_base64, FILETYPE, QUESTION1, PROMPT1, MODEL, 1024, 0)
         print(message)
 
 print("--------------------")
@@ -66,5 +67,5 @@ print("--------------------")
 maps = directory + "/s02e02.jpg"
 with open(maps, "rb") as image_file:
     image_base64 = base64.b64encode(image_file.read()).decode('utf-8')
-    message = AIService().describeImage(image_base64, QUESTION2, PROMPT2, MODEL, 1024, 0)
+    message = AIService().describeImage(image_base64, FILETYPE, QUESTION2, PROMPT2, MODEL, 1024, 0)
     print(message)
