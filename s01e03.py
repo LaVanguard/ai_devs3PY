@@ -10,6 +10,7 @@ from messenger import verify_task
 PROMPT = "You are helpful assistant. Provide answer to the given questions."
 
 load_dotenv()
+file_path = f"resources/s01e03/s01e03.txt"
 
 
 def retrieve_data() -> str:
@@ -17,7 +18,7 @@ def retrieve_data() -> str:
     api_key_pattern = os.environ.get("aidevs.api_key_pattern")
 
     content = ""
-    file_path = f"resources/s01e03/s01e03.txt"
+
     if not os.path.exists(file_path):
         # Fetch the content from the specified URL
         url = os.environ.get("aidevs.s01e03.file_url_prefix")
