@@ -20,9 +20,9 @@ def verify_task(task, answer, url):
         "answer": answer
     }
 
-    json_json = json.dumps(json_obj)
+    data = json.dumps(json_obj)
     response = requests.post(url,
-                             data=json_json,
+                             data=data,
                              headers={"Content-Type": "application/json"},
                              )
     return response.json()

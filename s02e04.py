@@ -4,24 +4,27 @@ import zipfile
 from functools import partial
 
 import requests
+from deepdiff.serialization import json_loads
 from dotenv import load_dotenv
 
 from AIService import AIService
 from messenger import verify_task
 
-TXT_PROMPT = """You are helpful specialist of human and machine activity recognition.
-You categorize reports according to type of activity: human, machine or neither.
+IMG_PROMPT = """You are helpful text recognition specialist that provides a summary of the recognized content.
 """
+PROMPT = """You are a helpful data analyst. Analyze reports to provide categorized summary of the data.
+Each report section consists of a source file name followed by a colon and the content of the report.
+Pay special attention to the reports containing information about captured people or traces of their presence and 
+repaired hardware faults since this is the information that should be included in the summary.
+Follow strictly the rules:
+1. If the activity is related to hardware fault categorize it as "hardware".
+2. If the activity is related to software ignore it.
+3. If the activity ends up with seizing people or finding traces of people's presence categorize it as "people".
+4. If the activity is related to people but does not involve seizing or finding traces of people's presence ignore it.
+5. Do not include in the summary any other activities.
 
-PROMPT = """You are data analyst. Analyze the following reports and provide categorized summary of the data.
-If activity refers to machines categorize as "hardware".
-If activity refers to humans categorize as "people".
-IO activity is neither human nor hardware do not include it in the summary.
-Present result structuring content as follows:
-{
-  "people": ["plik1.txt", "plik2.mp3", "plikN.png"],
-  "hardware": ["plik4.txt", "plik5.png", "plik6.mp3"],
-}
+Present the results structuring the content as follows:
+{"people": ["file1.txt", "file2.mp3", "file3.png"],"hardware": ["file4.txt", "file5.png", "file6.mp3"]}
 """
 file_path = 'resources/s02e04'
 zip_file_path = 'resources/s02e04/s02e04.zip'
@@ -29,10 +32,10 @@ context = "Taking into consideration the following reports"
 aiservice = AIService()
 # Map file extensions to AIService methods with parameters
 file_handlers = {
-    '.txt': partial(aiservice.answer, prompt=TXT_PROMPT, model=AIService.AIModel.GPT4o),
+    '.txt': partial(aiservice.answer, model=AIService.AIModel.GPT4o),
     '.mp3': partial(aiservice.transcribe),
     '.png': partial(aiservice.describeImage, data_type=AIService.IMG_TYPE_PNG, question=AIService.IMG_QUESTION,
-                    prompt=TXT_PROMPT,
+                    prompt=IMG_PROMPT,
                     model=AIService.AIModel.GPT4o)
 }
 
@@ -60,38 +63,33 @@ load_dotenv()
 files = retrieve_data()
 for file in files:
     ext = os.path.splitext(file)[1]
-    handler = file_handlers.get(ext)
-    if handler:
-        result = ""
-        if ext == '.txt':
-            with open(file, 'r', encoding='utf-8') as f:
-                content = f.read()
-                result = handler(content)
-                context += os.path.basename(file) + ": " + result + "\n"
-        if ext == '.mp3':
-            with open(file, 'rb') as f:
-                result = handler(f)
-                context += os.path.basename(file) + ": " + result + "\n"
-        if ext == '.png':
-            with open(file, 'rb') as f:
-                content = base64.b64encode(f.read()).decode('utf-8')
-                result = handler(content)
-                context += os.path.basename(file) + ": " + result + "\n"
+    result = ""
+    if ext == '.txt':
+        with open(file, 'r', encoding='utf-8') as f:
+            content = f.read()
+            # result = handler(content)
+            context += os.path.basename(file) + ": " + content + "\n"
+    if ext == '.mp3':
+        handler = file_handlers.get(ext)
+        with open(file, 'rb') as f:
+            result = handler(f)
+            context += os.path.basename(file) + ": " + result + "\n"
+    if ext == '.png':
+        handler = file_handlers.get(ext)
+        with open(file, 'rb') as f:
+            content = base64.b64encode(f.read()).decode('utf-8')
+            result = handler(content)
+            context += os.path.basename(file) + ": " + result + "\n"
         print(f"Result for {file}: {result}")
 
 print(context)
 
-json = aiservice.answer(context, PROMPT)
+answer = aiservice.answer(context, PROMPT)
 print("Final report: ")
-print(json)
-response_data = verify_task(
-    "kategorie", context, os.environ.get("aidevs.report_url"))
-print(response_data)
+print(answer)
+data = json_loads(answer)
+print(data)
 
-# print(data)
-# img_url = AIService().generateImage(data, MODEL)
-# print(img_url)
-#
-# response_data = verify_task(
-#     "robotid", img_url, os.environ.get("aidevs.report_url"))
-# print(response_data)
+response_data = verify_task(
+    "kategorie", data, os.environ.get("aidevs.report_url"))
+print(response_data)
