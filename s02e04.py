@@ -1,7 +1,7 @@
 import base64
 import os
 import zipfile
-from functools import partial
+from abc import ABC, abstractmethod
 
 import requests
 from deepdiff.serialization import json_loads
@@ -28,16 +28,71 @@ Present the results structuring the content as follows:
 """
 file_path = 'resources/s02e04'
 zip_file_path = 'resources/s02e04/s02e04.zip'
-context = "Taking into consideration the following reports"
 aiservice = AIService()
-# Map file extensions to AIService methods with parameters
-file_handlers = {
-    '.txt': partial(aiservice.answer, model=AIService.AIModel.GPT4o),
-    '.mp3': partial(aiservice.transcribe),
-    '.png': partial(aiservice.describeImage, data_type=AIService.IMG_TYPE_PNG, question=AIService.IMG_QUESTION,
-                    prompt=IMG_PROMPT,
-                    model=AIService.AIModel.GPT4o)
-}
+
+
+class Strategy(ABC):
+    def __init__(self, medium: str) -> None:
+        self.medium = medium
+
+    @abstractmethod
+    def convert(self, file: str):
+        pass
+
+    def medium(self) -> str:
+        return self.medium
+
+
+class MP3ToTextStrategy(Strategy):
+
+    def __init__(self):
+        super().__init__('.mp3')
+
+    def convert(self, file: str) -> str:
+        with open(file, 'rb') as f:
+            return aiservice.transcribe(f)
+
+
+class PNGToTextStrategy(Strategy):
+    def __init__(self):
+        super().__init__('.png')
+
+    def convert(self, file: str) -> str:
+        with open(file, 'rb') as f:
+            content = base64.b64encode(f.read()).decode('utf-8')
+            return aiservice.describeImage(content, data_type=AIService.IMG_TYPE_PNG, question=AIService.IMG_QUESTION,
+                                           prompt=IMG_PROMPT,
+                                           model=AIService.AIModel.GPT4o)
+
+
+class TXTToTextStrategy(Strategy):
+    def __init__(self):
+        super().__init__('.txt')
+
+    def convert(self, file: str) -> str:
+        with open(file, 'r', encoding='utf-8') as f:
+            return f.read()
+
+
+class Context():
+
+    def __init__(self) -> None:
+        self._strategyDict = {}
+
+    def register(self, strategy: Strategy) -> None:
+        self._strategyDict[strategy.medium] = strategy
+
+    def build(self, files: str) -> str:
+        context = "Taking into consideration the following reports:\n"
+        for file in files:
+            ext = os.path.splitext(file)[1]
+            strategy = self._strategyDict.get(ext)
+            if strategy is None:
+                continue
+            result = os.path.basename(file) + ": " + strategy.convert(file) + "\n"
+            print(f"Result for {file}: {result}")
+            context += result
+        return context
 
 
 def retrieve_data() -> []:
@@ -59,37 +114,19 @@ def retrieve_data() -> []:
     return [os.path.join(file_path, f) for f in os.listdir(file_path) if os.path.isfile(os.path.join(file_path, f))]
 
 
+context = Context()
+context.register(MP3ToTextStrategy())
+context.register(PNGToTextStrategy())
+context.register(TXTToTextStrategy())
+
 load_dotenv()
 files = retrieve_data()
-for file in files:
-    ext = os.path.splitext(file)[1]
-    result = ""
-    if ext == '.txt':
-        with open(file, 'r', encoding='utf-8') as f:
-            content = f.read()
-            # result = handler(content)
-            context += os.path.basename(file) + ": " + content + "\n"
-    if ext == '.mp3':
-        handler = file_handlers.get(ext)
-        with open(file, 'rb') as f:
-            result = handler(f)
-            context += os.path.basename(file) + ": " + result + "\n"
-    if ext == '.png':
-        handler = file_handlers.get(ext)
-        with open(file, 'rb') as f:
-            content = base64.b64encode(f.read()).decode('utf-8')
-            result = handler(content)
-            context += os.path.basename(file) + ": " + result + "\n"
-        print(f"Result for {file}: {result}")
+question = context.build(files)
 
-print(context)
-
-answer = aiservice.answer(context, PROMPT)
+answer = aiservice.answer(question, PROMPT)
 print("Final report: ")
 print(answer)
-data = json_loads(answer)
-print(data)
 
 response_data = verify_task(
-    "kategorie", data, os.environ.get("aidevs.report_url"))
+    "kategorie", json_loads(answer), os.environ.get("aidevs.report_url"))
 print(response_data)
