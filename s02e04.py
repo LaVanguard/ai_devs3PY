@@ -28,10 +28,11 @@ Present the results structuring the content as follows:
 """
 file_path = 'resources/s02e04'
 zip_file_path = 'resources/s02e04/s02e04.zip'
-aiservice = AIService()
 
 
-class Strategy(ABC):
+class AIStrategy(ABC):
+    _aiservice = AIService()
+
     def __init__(self, medium: str) -> None:
         self.medium = medium
 
@@ -43,29 +44,30 @@ class Strategy(ABC):
         return self.medium
 
 
-class MP3ToTextStrategy(Strategy):
+class MP3ToTextStrategy(AIStrategy):
 
     def __init__(self):
         super().__init__('.mp3')
 
     def convert(self, file: str) -> str:
         with open(file, 'rb') as f:
-            return aiservice.transcribe(f)
+            return self._aiservice.transcribe(f)
 
 
-class PNGToTextStrategy(Strategy):
+class PNGToTextStrategy(AIStrategy):
     def __init__(self):
         super().__init__('.png')
 
     def convert(self, file: str) -> str:
         with open(file, 'rb') as f:
             content = base64.b64encode(f.read()).decode('utf-8')
-            return aiservice.describeImage(content, data_type=AIService.IMG_TYPE_PNG, question=AIService.IMG_QUESTION,
-                                           prompt=IMG_PROMPT,
-                                           model=AIService.AIModel.GPT4o)
+            return self._aiservice.describeImage(content, data_type=AIService.IMG_TYPE_PNG,
+                                                 question=AIService.IMG_QUESTION,
+                                                 prompt=IMG_PROMPT,
+                                                 model=AIService.AIModel.GPT4o)
 
 
-class TXTToTextStrategy(Strategy):
+class TXTToTextStrategy(AIStrategy):
     def __init__(self):
         super().__init__('.txt')
 
@@ -79,7 +81,7 @@ class Context():
     def __init__(self) -> None:
         self._strategyDict = {}
 
-    def register(self, strategy: Strategy) -> None:
+    def register(self, strategy: AIStrategy) -> None:
         self._strategyDict[strategy.medium] = strategy
 
     def build(self, files: str) -> str:
@@ -123,7 +125,7 @@ load_dotenv()
 files = retrieve_data()
 question = context.build(files)
 
-answer = aiservice.answer(question, PROMPT)
+answer = AIService().answer(question, PROMPT)
 print("Final report: ")
 print(answer)
 
