@@ -85,7 +85,7 @@ class Context():
         self._strategyDict[strategy.medium] = strategy
 
     def build(self, files: str) -> str:
-        context = "Taking into consideration the following reports:\n"
+        context = ""
         for file in files:
             ext = os.path.splitext(file)[1]
             strategy = self._strategyDict.get(ext)
