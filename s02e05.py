@@ -55,32 +55,21 @@ class Context():
         soup = self.strip_p_tags(soup)
         container = soup.find('div', class_='container')
         if not container:
-            return []
+            return ""
 
         current_section = {'title': '', 'text': ''}
         for element in container.descendants:
             if element.name == 'h1':
-                current_section['title'] = element.get_text(strip=True)
+                current_section = self.process_h1(element, current_section, sections)
             elif element.name == 'h2':
-                if current_section['text']:
-                    sections.append(current_section)
-                current_section = {'title': element.get_text(strip=True), 'text': ''}
+                current_section = self.process_h2(element, current_section, sections)
             elif element.name == 'figure':
-                img_tag = element.find('img')
-                figcaption_tag = element.find('figcaption')
-                if img_tag and figcaption_tag:
-                    img_url = f"https://centrala.ag3nts.org/dane/{img_tag['src']}"
-                    img_file_path = retrieve_and_save_file(folder, img_url)
-                    current_section[
-                        'text'] += f"Image (caption: {figcaption_tag.get_text(strip=True)}): {self.convert(img_file_path)} "
+                current_section = self.process_figure(element, current_section)
             elif element.name == 'audio' and 'controls' in element.attrs:
-                source_tag = element.find('source')
-                if source_tag and 'src' in source_tag.attrs:
-                    audio_url = f"https://centrala.ag3nts.org/dane/{source_tag['src']}"
-                    audio_file_path = retrieve_and_save_file(folder, audio_url)
-                    current_section['text'] += f"Audio transcription: {self.convert(audio_file_path)} "
+                current_section = self.process_audio(element, current_section)
             elif element.string:
                 current_section['text'] += element.string.strip() + ' '
+
         if current_section['text']:
             sections.append(current_section)
 
@@ -94,6 +83,33 @@ class Context():
             p.unwrap()  # Remove the <p> tag but keep its content
         return soup
 
+    def process_h1(self, element, current_section, sections):
+        current_section['title'] = element.get_text(strip=True)
+        return current_section
+
+    def process_h2(self, element, current_section, sections):
+        if current_section['text']:
+            sections.append(current_section)
+        return {'title': element.get_text(strip=True), 'text': ''}
+
+    def process_figure(self, element, current_section):
+        img_tag = element.find('img')
+        figcaption_tag = element.find('figcaption')
+        if img_tag and figcaption_tag:
+            img_url = f"https://centrala.ag3nts.org/dane/{img_tag['src']}"
+            img_file_path = retrieve_and_save_file(folder, img_url)
+            current_section[
+                'text'] += f"Image (caption: {figcaption_tag.get_text(strip=True)}): {self.convert(img_file_path)} "
+        return current_section
+
+    def process_audio(self, element, current_section):
+        source_tag = element.find('source')
+        if source_tag and 'src' in source_tag.attrs:
+            audio_url = f"https://centrala.ag3nts.org/dane/{source_tag['src']}"
+            audio_file_path = retrieve_and_save_file(folder, audio_url)
+            current_section['text'] += f"Audio transcription: {self.convert(audio_file_path)} "
+        return current_section
+
 
 def retrieve_and_save_file(folder, url) -> str:
     response = requests.get(url)
@@ -106,38 +122,17 @@ def retrieve_and_save_file(folder, url) -> str:
 
 def retrieve_text(article_url) -> []:
     # Fetch the content from the specified URL
-
     response = requests.get(article_url)
     response.raise_for_status()  # Ensure the request was successful
     return response.text
 
 
-# Function to extract text, images, and audio links
-def extract_content(soup):
-    text_content = soup.get_text()
-    images = [img['src'] for img in soup.find_all('img')]
-    audio_links = [audio['src'] for audio in soup.find_all('audio')]
-    return text_content, images, audio_links
-
-
-def build_context(sections):
-    context = PROMPT
-    for section in sections:
-        context += f"Section: {section['title']}\n"
-        context += " ".join(section['text']) + "\n"
-    return context
-
-
 load_dotenv()
 questions = retrieve_text(os.environ.get("aidevs.s02e05.questions_url"))
-
-# article = strip_p_tags(soup)
 context = Context()
 context.register(MP3ToTextStrategy())
 context.register(PNGToTextStrategy())
-
 contextString = context.build(os.environ.get("aidevs.s02e05.article_url"))
-# context = build_context(sections)
 answers = AIService().answer(questions, contextString)
 
 print(questions)
