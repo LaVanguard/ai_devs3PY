@@ -45,10 +45,10 @@ class AIService:
             return self.answerAnthropic(question, prompt, aitype[1], max_tokens, temperature)
         raise ValueError(f"Unsupported AI model type: {aitype[0]}")
 
-    def transcribe(self, file, model=AIModel.WHISPER) -> str:
+    def transcribe(self, audio_file, model=AIModel.WHISPER) -> str:
         aitype = model.value.split(":")
         if aitype[0] == "openai":
-            return self.transcribeOpenAI(file, aitype[1])
+            return self.transcribeOpenAI(audio_file, aitype[1])
         raise ValueError(f"Unsupported AI model type: {aitype[0]}")
 
     def describeImage(self, image_data, data_type=IMG_TYPE_PNG, question=IMG_QUESTION, prompt=PROMPT,
