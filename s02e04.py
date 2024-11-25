@@ -1,17 +1,17 @@
-import base64
 import os
 import zipfile
-from abc import ABC, abstractmethod
 
 import requests
 from deepdiff.serialization import json_loads
 from dotenv import load_dotenv
 
 from AIService import AIService
+from AIStrategy import AIStrategy
+from MP3ToTextStrategy import MP3ToTextStrategy
+from PNGToTextStrategy import PNGToTextStrategy
+from TXTToTextStrategy import TXTToTextStrategy
 from messenger import verify_task
 
-IMG_PROMPT = """You are helpful text recognition specialist that provides a summary of the recognized content.
-"""
 PROMPT = """You are a helpful data analyst. Analyze reports to provide categorized summary of the data.
 Each report section consists of a source file name followed by a colon and the content of the report.
 Pay special attention to the reports containing information about captured people or traces of their presence and 
@@ -28,52 +28,6 @@ Present the results structuring the content as follows:
 """
 file_path = 'resources/s02e04'
 zip_file_path = 'resources/s02e04/s02e04.zip'
-
-
-class AIStrategy(ABC):
-    _aiservice = AIService()
-
-    def __init__(self, medium: str) -> None:
-        self.medium = medium
-
-    @abstractmethod
-    def convert(self, file: str):
-        pass
-
-    def medium(self) -> str:
-        return self.medium
-
-
-class MP3ToTextStrategy(AIStrategy):
-
-    def __init__(self):
-        super().__init__('.mp3')
-
-    def convert(self, file: str) -> str:
-        with open(file, 'rb') as f:
-            return self._aiservice.transcribe(f)
-
-
-class PNGToTextStrategy(AIStrategy):
-    def __init__(self):
-        super().__init__('.png')
-
-    def convert(self, file: str) -> str:
-        with open(file, 'rb') as f:
-            content = base64.b64encode(f.read()).decode('utf-8')
-            return self._aiservice.describeImage(content, data_type=AIService.IMG_TYPE_PNG,
-                                                 question=AIService.IMG_QUESTION,
-                                                 prompt=IMG_PROMPT,
-                                                 model=AIService.AIModel.GPT4o)
-
-
-class TXTToTextStrategy(AIStrategy):
-    def __init__(self):
-        super().__init__('.txt')
-
-    def convert(self, file: str) -> str:
-        with open(file, 'r', encoding='utf-8') as f:
-            return f.read()
 
 
 class Context():
