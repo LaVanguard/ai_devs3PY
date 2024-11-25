@@ -49,6 +49,7 @@ class Context():
         return strategy.convert(file)
 
     def build(self, url: str) -> str:
+        folder_url = os.path.dirname(url)
         context = PROMPT
         sections = []
         soup = BeautifulSoup(retrieve_text(url), 'html.parser')
@@ -64,9 +65,9 @@ class Context():
             elif element.name == 'h2':
                 current_section = self.process_h2(element, current_section, sections)
             elif element.name == 'figure':
-                current_section = self.process_figure(element, current_section)
+                current_section = self.process_figure(element, current_section, folder_url)
             elif element.name == 'audio' and 'controls' in element.attrs:
-                current_section = self.process_audio(element, current_section)
+                current_section = self.process_audio(element, current_section, folder_url)
             elif element.string:
                 current_section['text'] += element.string.strip() + ' '
 
@@ -92,20 +93,20 @@ class Context():
             sections.append(current_section)
         return {'title': element.get_text(strip=True), 'text': ''}
 
-    def process_figure(self, element, current_section):
+    def process_figure(self, element, current_section, folder_url):
         img_tag = element.find('img')
         figcaption_tag = element.find('figcaption')
         if img_tag and figcaption_tag:
-            img_url = f"https://centrala.ag3nts.org/dane/{img_tag['src']}"
+            img_url = f"{folder_url}/{img_tag['src']}"
             img_file_path = retrieve_and_save_file(folder, img_url)
             current_section[
                 'text'] += f"Image (caption: {figcaption_tag.get_text(strip=True)}): {self.convert(img_file_path)} "
         return current_section
 
-    def process_audio(self, element, current_section):
+    def process_audio(self, element, current_section, folder_url):
         source_tag = element.find('source')
         if source_tag and 'src' in source_tag.attrs:
-            audio_url = f"https://centrala.ag3nts.org/dane/{source_tag['src']}"
+            audio_url = f"{folder_url}/{source_tag['src']}"
             audio_file_path = retrieve_and_save_file(folder, audio_url)
             current_section['text'] += f"Audio transcription: {self.convert(audio_file_path)} "
         return current_section
