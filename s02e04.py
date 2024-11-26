@@ -27,7 +27,6 @@ Present the results structuring the content as follows:
 {"people": ["file1.txt", "file2.mp3", "file3.png"],"hardware": ["file4.txt", "file5.png", "file6.mp3"]}
 """
 file_path = 'resources/s02e04'
-zip_file_path = 'resources/s02e04/s02e04.zip'
 
 
 class Context():
@@ -54,6 +53,7 @@ class Context():
 def retrieve_data() -> []:
     # Fetch the content from the specified URL
     url = os.environ.get("aidevs.s02e04.url")
+    zip_file_path = os.path.basename(url)
     response = requests.get(url)
     response.raise_for_status()  # Ensure the request was successful
 
