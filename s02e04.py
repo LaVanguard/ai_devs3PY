@@ -50,9 +50,8 @@ class Context():
         return context
 
 
-def retrieve_data() -> []:
+def retrieve_data(url) -> []:
     # Fetch the content from the specified URL
-    url = os.environ.get("aidevs.s02e04.url")
     zip_file_path = os.path.basename(url)
     response = requests.get(url)
     response.raise_for_status()  # Ensure the request was successful
@@ -76,7 +75,7 @@ context.register(PNGToTextStrategy())
 context.register(TXTToTextStrategy())
 
 load_dotenv()
-files = retrieve_data()
+files = retrieve_data(os.environ.get("aidevs.factory_files_url"))
 question = context.build(files)
 
 answer = AIService().answer(question, PROMPT)
