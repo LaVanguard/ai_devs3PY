@@ -8,18 +8,18 @@ from dotenv import load_dotenv
 from AIService import AIService
 from messenger import verify_task
 
-PROMPT = """You are a data analyst helping summarize reports. Each report consist of the file name of the report and
-the report itself. Your work is not generate 5 keywords for each report. Each keyword must be in nominative case in Polish.
+PROMPT = """Please extract all the information from the document relating to people their fate and their occupation. Ignore deleted records. 
+Your task is to generate keywords for each report. Each report consist of the file name followed by a colon and
+the report itself. Your work is not generate keywords for each report. Each keyword must be in nominative case in Polish. There must be exactly one list of keywords for each report.
+<important> Pay special attention to activities that are reported. Instead of names report individual's occupation or the role.
 Provide answer in the following format ignoring new line characters:
 {
-"nazwa-pliku-01.txt":"wykrycie, alarm, zabezpieczenie, kamera, monitoring",
-"nazwa-pliku-02.txt":"obszar, patrolowanie, anomalia, skaner, kontrola",
-"nazwa-pliku-03.txt":"obserwacja, czujnik, peryferia, mechaniczny, zabezpieczenie",
-"nazwa-pliku-NN.txt":"zdarzenie, reakcja, godzina, sygnał, kontrola"
+"nazwa-pliku-01.txt":"lista, słów, kluczowych 1",
+"nazwa-pliku-02.txt":"lista, słów, kluczowych 2",
+"nazwa-pliku-03.txt":"lista, słów, kluczowych 3",
+"nazwa-pliku-NN.txt":"lista, słów, kluczowych N"
 }
-
-<important>
-Pay special attention to any anomalies, arrests or human activities and take into consideration the following facts when analysing the reports:
+<reports>
 """
 file_path = 'resources/s03e01'
 facts_folder_path = f'{file_path}/facts'
@@ -49,7 +49,7 @@ def concatenate_texts_from_facts() -> str:
         if file_name.endswith('.txt'):
             file_path = os.path.join(facts_folder_path, file_name)
             with open(file_path, 'r', encoding='utf-8') as file:
-                concatenated_text += file.read() + "\n"
+                concatenated_text += file.read()
     return concatenated_text
 
 
@@ -58,8 +58,7 @@ def build_reports(files) -> str:
     for file in files:
         file_name = os.path.basename(file)
         with open(file, 'r', encoding='utf-8') as f:
-            reports += file_name + "\n"
-            reports += f.read() + "\n"
+            reports += file_name + ": " + f.read() + "\n"
     return reports
 
 
@@ -67,9 +66,10 @@ load_dotenv()
 
 files = retrieve_data(os.environ.get("aidevs.factory_files_url"))
 facts = concatenate_texts_from_facts()
-context = PROMPT + facts
+print("facts:\n" + facts)
+context = f"<document>${facts}</document>\n" + PROMPT
 reports = build_reports(files)
-print(facts)
+print("reports:\n" + reports)
 keywords = AIService().answer(reports, context)
 print(keywords)
 
