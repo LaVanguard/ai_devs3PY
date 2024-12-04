@@ -8,10 +8,12 @@ from dotenv import load_dotenv
 from AIService import AIService
 from messenger import verify_task
 
-PROMPT = """Please extract all the information from the document relating to people their fate and their occupation. Ignore deleted records. 
-Your task is to generate keywords for each report. Each report consist of the file name followed by a colon and
-the report itself. Your work is not generate keywords for each report. Each keyword must be in nominative case in Polish. There must be exactly one list of keywords for each report.
-<important> Pay special attention to activities that are reported. Instead of names report individual's occupation or the role.
+PROMPT = """Please extract all the information from the document building map of keywords related to people, their fate and their occupation. 
+Each paragraph (fact) should have as many keywords as possible . Ignore deleted records. 
+Your task is to generate keywords for the given reports. Each report consist of the file name followed by a colon and
+the report itself. Each keyword must be in nominative case in Polish. There must be exactly one list of keywords for each report. 
+Map keywords from document to achieve that. The more keywords you associate the better.
+<important> Pay special attention to activities that are reported. Include activities like arresting, detaining, and capturing people.
 Provide answer in the following format ignoring new line characters:
 {
 "nazwa-pliku-01.txt":"lista, słów, kluczowych 1",
@@ -70,7 +72,7 @@ print("facts:\n" + facts)
 context = f"<document>${facts}</document>\n" + PROMPT
 reports = build_reports(files)
 print("reports:\n" + reports)
-keywords = AIService().answer(reports, context)
+keywords = AIService().answer(reports, context, AIService.AIModel.GPT4o)
 print(keywords)
 
 response_data = verify_task("dokumenty", json_loads(keywords), os.environ.get("aidevs.report_url"))

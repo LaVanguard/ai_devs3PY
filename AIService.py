@@ -105,15 +105,7 @@ class AIService:
                 {
                     "role": "user", "content": [
                     {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "image_media_type",
-                            "data": "image_data"
-                        }
-                    },
-                    {
-                        "type": "text", "text": "What is this image?"
+                        "type": "text", "text": question
                     }
                 ]}
             ])
