@@ -8,21 +8,31 @@ from dotenv import load_dotenv
 from AIService import AIService
 from messenger import verify_task
 
-PROMPT = """Please extract all the information from the document building map of keywords related to people, their fate and their occupation. 
-Each paragraph (fact) should have as many keywords as possible . Ignore deleted records. 
+KEYWORDS_PROMPT = """Extract all the information from the document in Polish, building a map of Polish keywords related to people, 
+their fate and their occupation. Input contains paragraphs called facts. Each paragraph (fact) should have as many keywords as possible. Ignore deleted records.
+Rules:
+- Each keyword must be in nominative case in Polish.
+- Categorize keywords per person
+- Provide as many keywords as possible.
+- Do not include any other information than keywords.
+"""
+PROMPT = """Match provided information with the categorized keywords. 
 Your task is to generate keywords for the given reports. Each report consist of the file name followed by a colon and
-the report itself. Each keyword must be in nominative case in Polish. There must be exactly one list of keywords for each report. 
-Map keywords from document to achieve that. The more keywords you associate the better.
-<important> Pay special attention to activities that are reported. Include activities like arresting, detaining, and capturing people.
-Provide answer in the following format ignoring new line characters:
+the report itself. Retrieve name of the sector from the file name. There must be exactly one list of keywords for each report. 
+If you find a match, include keywords from the <categorizedKeywords> too. 
+Rules:
+- Ignore deleted records
+- Include sector name from file name as a keyword.
+- Each keyword must be in nominative case in Polish.
+- If report consists of a person from categorized keywords, include all those keywords in the output
+- Provide as many keywords as possible.
+- Provide answer in the following format ignoring new line characters:
 {
 "nazwa-pliku-01.txt":"lista, słów, kluczowych 1",
 "nazwa-pliku-02.txt":"lista, słów, kluczowych 2",
 "nazwa-pliku-03.txt":"lista, słów, kluczowych 3",
 "nazwa-pliku-NN.txt":"lista, słów, kluczowych N"
-}
-<reports>
-"""
+}"""
 file_path = 'resources/s03e01'
 facts_folder_path = f'{file_path}/facts'
 
@@ -45,14 +55,15 @@ def retrieve_data(url) -> []:
     return [os.path.join(file_path, f) for f in os.listdir(file_path) if f.endswith('.txt') and 'sektor' in f]
 
 
-def concatenate_texts_from_facts() -> str:
+def keywords_from_facts() -> str:
     concatenated_text = ""
     for file_name in os.listdir(facts_folder_path):
         if file_name.endswith('.txt'):
             file_path = os.path.join(facts_folder_path, file_name)
             with open(file_path, 'r', encoding='utf-8') as file:
                 concatenated_text += file.read()
-    return concatenated_text
+    print("facts:\n" + concatenated_text)
+    return AIService().answer(concatenated_text, KEYWORDS_PROMPT, AIService.AIModel.GPT4o)
 
 
 def build_reports(files) -> str:
@@ -67,9 +78,9 @@ def build_reports(files) -> str:
 load_dotenv()
 
 files = retrieve_data(os.environ.get("aidevs.factory_files_url"))
-facts = concatenate_texts_from_facts()
-print("facts:\n" + facts)
-context = f"<document>${facts}</document>\n" + PROMPT
+factsKeywords = keywords_from_facts()
+print("keywords:\n" + factsKeywords)
+context = f"<categorizedKeywords>${factsKeywords}</categorizedKeywords>\n" + PROMPT
 reports = build_reports(files)
 print("reports:\n" + reports)
 keywords = AIService().answer(reports, context, AIService.AIModel.GPT4o)
