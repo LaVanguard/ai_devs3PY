@@ -67,7 +67,7 @@ def create_points(result, texts):
         PointStruct(
             id=idx,
             vector=data.embedding,
-            payload={"text": text},
+            payload={"text": text, "date": text.split(':')[0]},
         )
         for idx, (data, text) in enumerate(zip(result.data, texts))
     ]
@@ -94,9 +94,10 @@ def insert_points(collection_name):
 def answer_question(question, collection_name) -> str:
     answers = qdrant.search(
         collection_name=collection_name,
-        query_vector=create_embeddings([question]).data[0].embedding
+        query_vector=create_embeddings([question]).data[0].embedding,
+        limit=1,
     )
-    return answers[0].payload.get('text').split(':')[0]
+    return answers[0].payload.get('date')
 
 
 load_dotenv()
