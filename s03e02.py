@@ -4,12 +4,18 @@ import zipfile
 import openai
 import requests
 from dotenv import load_dotenv
-from qdrant_client import QdrantClient
+from qdrant_client import QdrantClient, models
 from qdrant_client.http.models import PointStruct
 from qdrant_client.models import VectorParams, Distance
 
+from AIService import AIService
 from messenger import verify_task
 
+PROMPT = """You are a helpful assistant that provide Yes/No answers.
+Rules
+1. Answer 'Yes' only if you detect mention about theft in the given Polish text. 
+2. Answer No otherwise.
+"""
 file_path = 'resources/s03e02'
 folder_path = f'{file_path}/do-not-share'
 question = "W raporcie, z którego dnia znajduje się wzmianka o kradzieży prototypu broni?"
@@ -62,12 +68,19 @@ def create_embeddings(texts):
     )
 
 
+service = AIService()
+
+
 def create_points(result, texts):
     return [
         PointStruct(
             id=idx,
             vector=data.embedding,
-            payload={"text": text, "date": text.split(':')[0]},
+            payload={
+                "text": text,
+                "date": text.split(':')[0],
+                "theft": service.answer(text, PROMPT)
+            },
         )
         for idx, (data, text) in enumerate(zip(result.data, texts))
     ]
@@ -95,6 +108,16 @@ def answer_question(question, collection_name) -> str:
     answers = qdrant.search(
         collection_name=collection_name,
         query_vector=create_embeddings([question]).data[0].embedding,
+        query_filter=models.Filter(
+            must=[
+                models.FieldCondition(
+                    key="theft",
+                    match=models.MatchValue(
+                        value="Yes",
+                    ),
+                )
+            ]
+        ),
         limit=1,
     )
     return answers[0].payload.get('date')
