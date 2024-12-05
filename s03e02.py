@@ -1,8 +1,10 @@
 import os
 import zipfile
+from datetime import datetime
 
 import openai
 import requests
+from deepdiff.serialization import json_loads
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.models import PointStruct
@@ -16,9 +18,9 @@ PROMPT = """You are a helpful assistant that analyse Polish text and provide 2 i
 2. Name of the weapon from the input report.
 
 Example output:
-Yes:Oscylator energetyczny
-No:Miotacz plazmy
-Yes:Zakrzywiony miecz
+{"Theft": "Yes", "Weapon": "Oscylator energetyczny"}
+{"Theft": "No", "Weapon": "Miotacz plazmy"}
+{"Theft": "Yes", "Weapon": "Zakrzywiony miecz"}
 """
 
 file_path = 'resources/s03e02'
@@ -27,6 +29,8 @@ question = "W raporcie, z którego dnia znajduje się wzmianka o kradzieży prot
 collection_name = "weapons_test_results"
 embedding_model = "text-embedding-3-small"
 openai.api_key = os.getenv("openai.api_key")
+date_format_underscores = "%Y_%m_%d"
+date_format_dashes = "%Y-%m-%d"
 
 
 def retrieve_data(url) -> []:
@@ -60,9 +64,19 @@ def read_files_from_folder(folder_path):
         if file_name.endswith('.txt'):
             file_path = os.path.join(folder_path, file_name)
             with open(file_path, 'r', encoding='utf-8') as file:
-                text = file_name.split('.txt')[0].replace('_', '-') + ":" + file.read()
-                file_contents.append(text.replace('\n', ' '))
+                text = f"{format_date(file_name)}:{replace_new_lines(file.read())}"
+                file_contents.append(text)
     return file_contents
+
+
+def replace_new_lines(text):
+    return text.replace('\n', ' ')
+
+
+def format_date(file_name):
+    date_obj = datetime.strptime(file_name.split('.txt')[0], date_format_underscores)
+    formatted_date = date_obj.strftime(date_format_dashes)
+    return formatted_date
 
 
 # Function to create embeddings using OpenAI
@@ -84,12 +98,12 @@ def create_points(result, texts):
             payload={
                 "text": text,
                 "date": text.split(':')[0],
-                "theft": answer.split(':')[0],
-                "weapon": answer.split(':')[1]
+                "theft": answer.get("Theft"),
+                "weapon": answer.get("Weapon")
             },
         )
         for idx, (data, text) in enumerate(zip(result.data, texts))
-        if (answer := service.answer(text, PROMPT))
+        if (answer := json_loads(service.answer(text, PROMPT)))
     ]
 
 
