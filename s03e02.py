@@ -11,14 +11,16 @@ from qdrant_client.models import VectorParams, Distance
 from AIService import AIService
 from messenger import verify_task
 
-PROMPT_THEFT = """You are a helpful assistant that provide Yes/No answers.
-Rules
-1. Answer 'Yes' only if you detect mention about theft in the given Polish text. 
-2. Answer No otherwise.
+PROMPT = """You are a helpful assistant that analyse Polish text and provide 2 information:
+1. 'Yes' only if you detect a mention about a theft in the given report, 'No' otherwise.
+2. Name of the weapon from the input report.
+
+Example output:
+Yes:Oscylator energetyczny
+No:Miotacz plazmy
+Yes:Zakrzywiony miecz
 """
-PROMPT_WEAPON = """You are a helpful assistant that retrieves name of the weapon from the input report.
-Return only name of the weapon, nothing else.
-"""
+
 file_path = 'resources/s03e02'
 folder_path = f'{file_path}/do-not-share'
 question = "W raporcie, z którego dnia znajduje się wzmianka o kradzieży prototypu broni?"
@@ -82,11 +84,12 @@ def create_points(result, texts):
             payload={
                 "text": text,
                 "date": text.split(':')[0],
-                "theft": service.answer(text, PROMPT_THEFT),
-                "weapon": service.answer(text, PROMPT_WEAPON)
+                "theft": answer.split(':')[0],
+                "weapon": answer.split(':')[1]
             },
         )
         for idx, (data, text) in enumerate(zip(result.data, texts))
+        if (answer := service.answer(text, PROMPT))
     ]
 
 
