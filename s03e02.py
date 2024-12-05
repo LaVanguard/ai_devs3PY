@@ -11,10 +11,13 @@ from qdrant_client.models import VectorParams, Distance
 from AIService import AIService
 from messenger import verify_task
 
-PROMPT = """You are a helpful assistant that provide Yes/No answers.
+PROMPT_THEFT = """You are a helpful assistant that provide Yes/No answers.
 Rules
 1. Answer 'Yes' only if you detect mention about theft in the given Polish text. 
 2. Answer No otherwise.
+"""
+PROMPT_WEAPON = """You are a helpful assistant that retrieves name of the weapon from the input report.
+Return only name of the weapon, nothing else.
 """
 file_path = 'resources/s03e02'
 folder_path = f'{file_path}/do-not-share'
@@ -79,7 +82,8 @@ def create_points(result, texts):
             payload={
                 "text": text,
                 "date": text.split(':')[0],
-                "theft": service.answer(text, PROMPT)
+                "theft": service.answer(text, PROMPT_THEFT),
+                "weapon": service.answer(text, PROMPT_WEAPON)
             },
         )
         for idx, (data, text) in enumerate(zip(result.data, texts))
