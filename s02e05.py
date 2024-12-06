@@ -9,7 +9,7 @@ from AIService import AIService
 from AIStrategy import AIStrategy
 from MP3ToTextStrategy import MP3ToTextStrategy
 from PNGToTextStrategy import PNGToTextStrategy
-from messenger import verify_task
+from messenger import verify_task, get_file_data, get_file_content
 
 ARTICLE_URL = os.environ.get("aidevs.s02e05.article_url")
 PROMPT = """You are a helpful data analyst. Analyze the provided article to answer the questions given in the following format
@@ -30,7 +30,7 @@ Pay special attention to the context of images and audio files.
 Context: {context}
 """
 
-folder = 'resources/s02e05'
+working_dir = 'resources/s02e05'
 
 
 class Context():
@@ -48,11 +48,10 @@ class Context():
             return ""
         return strategy.convert(file)
 
-    def build(self, url: str) -> str:
-        folder_url = os.path.dirname(url)
+    def build(self, article_file_name: str) -> str:
         context = PROMPT
         sections = []
-        soup = BeautifulSoup(retrieve_text(url), 'html.parser')
+        soup = BeautifulSoup(get_file_data(article_file_name), 'html.parser')
         soup = self.strip_p_tags(soup)
         container = soup.find('div', class_='container')
         if not container:
@@ -65,9 +64,9 @@ class Context():
             elif element.name == 'h2':
                 current_section = self.process_h2(element, current_section, sections)
             elif element.name == 'figure':
-                current_section = self.process_figure(element, current_section, folder_url)
+                current_section = self.process_figure(element, current_section)
             elif element.name == 'audio' and 'controls' in element.attrs:
-                current_section = self.process_audio(element, current_section, folder_url)
+                current_section = self.process_audio(element, current_section)
             elif element.string:
                 current_section['text'] += element.string.strip() + ' '
 
@@ -93,31 +92,32 @@ class Context():
             sections.append(current_section)
         return {'title': element.get_text(strip=True), 'text': ''}
 
-    def process_figure(self, element, current_section, folder_url):
+    def process_figure(self, element, current_section):
         img_tag = element.find('img')
         figcaption_tag = element.find('figcaption')
         if img_tag and figcaption_tag:
-            img_url = f"{folder_url}/{img_tag['src']}"
-            img_file_path = retrieve_and_save_file(folder, img_url)
+            file_name = img_tag['src']
+            img_file_path = retrieve_and_save_file(file_name)
             current_section[
                 'text'] += f"Image (caption: {figcaption_tag.get_text(strip=True)}): {self.convert(img_file_path)} "
         return current_section
 
-    def process_audio(self, element, current_section, folder_url):
+    def process_audio(self, element, current_section):
         source_tag = element.find('source')
         if source_tag and 'src' in source_tag.attrs:
-            audio_url = f"{folder_url}/{source_tag['src']}"
-            audio_file_path = retrieve_and_save_file(folder, audio_url)
+            file_name = source_tag['src']
+            audio_file_path = retrieve_and_save_file(file_name)
             current_section['text'] += f"Audio transcription: {self.convert(audio_file_path)} "
         return current_section
 
 
-def retrieve_and_save_file(folder, url) -> str:
-    response = requests.get(url)
-    response.raise_for_status()  # Ensure the request was successful
-    file_path = f"{folder}/{os.path.basename(url)}"
+def retrieve_and_save_file(resource_name) -> str:
+    content = get_file_content(resource_name)
+    file_name = os.path.basename(resource_name)
+    file_path = os.path.join(working_dir, file_name)
+    os.makedirs(working_dir, exist_ok=True)
     with open(file_path, "wb") as file:
-        file.write(response.content)
+        file.write(content)
     return file_path
 
 
@@ -129,15 +129,16 @@ def retrieve_text(article_url) -> []:
 
 
 load_dotenv()
-questions = retrieve_text(os.environ.get("aidevs.s02e05.questions_url"))
+questions = get_file_data(os.environ.get("aidevs.s02e05.questions_file_name"), True)
 context = Context()
 context.register(MP3ToTextStrategy())
 context.register(PNGToTextStrategy())
-contextString = context.build(os.environ.get("aidevs.s02e05.article_url"))
+contextString = context.build(os.environ.get("aidevs.s02e05.article_file_name"))
 answers = AIService().answer(questions, contextString)
 
 print(questions)
 print(answers)
 
-response_data = verify_task("arxiv", json_loads(answers))
+response_data = verify_task(
+    "arxiv", json_loads(answers), os.environ.get("aidevs.report_url"))
 print(response_data)

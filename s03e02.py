@@ -3,7 +3,6 @@ import zipfile
 from datetime import datetime
 
 import openai
-import requests
 from deepdiff.serialization import json_loads
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient, models
@@ -11,7 +10,7 @@ from qdrant_client.http.models import PointStruct
 from qdrant_client.models import VectorParams, Distance
 
 from AIService import AIService
-from messenger import verify_task
+from messenger import verify_task, get_file_content
 
 PROMPT = """You are a helpful assistant that analyse Polish text and provide 2 information:
 1. 'Yes' only if you detect a mention about a theft in the given report, 'No' otherwise.
@@ -23,8 +22,8 @@ Example output:
 {"Theft": "Yes", "Weapon": "Zakrzywiony miecz"}
 """
 
-file_path = 'resources/s03e02'
-folder_path = f'{file_path}/do-not-share'
+working_dir = 'resources/s03e02'
+folder_path = f'{working_dir}/do-not-share'
 question = "W raporcie, z którego dnia znajduje się wzmianka o kradzieży prototypu broni?"
 collection_name = "weapons_test_results"
 embedding_model = "text-embedding-3-small"
@@ -33,22 +32,21 @@ date_format_underscores = "%Y_%m_%d"
 date_format_dashes = "%Y-%m-%d"
 
 
-def retrieve_data(url) -> []:
-    zip_file_path = os.path.basename(url)
-    response = requests.get(url)
-    response.raise_for_status()  # Ensure the request was successful
-
+def retrieve_data(file_name) -> []:
+    zip_file_path = os.path.join(working_dir, file_name)
+    content = get_file_content(file_name)
+    os.makedirs(working_dir, exist_ok=True)
     # Write the zip file to disk
     with open(zip_file_path, "wb") as file:
-        file.write(response.content)
+        file.write(content)
 
     # Extract the zip file
     with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-        zip_ref.extractall(file_path)
+        zip_ref.extractall(working_dir)
 
     # Clean up the zip file
     os.remove(zip_file_path)
-    return [os.path.join(file_path, f) for f in os.listdir(file_path) if f.endswith('.zip')]
+    return [os.path.join(working_dir, f) for f in os.listdir(working_dir) if f.endswith('.zip')]
 
 
 def unzip_files_with_password(zip_files, extract_to_path):
@@ -145,8 +143,8 @@ def answer_question(question, collection_name) -> str:
 
 
 load_dotenv()
-files = retrieve_data(os.environ.get("aidevs.factory_files_url"))
-unzip_files_with_password(files, file_path)
+files = retrieve_data(os.environ.get("aidevs.factory_files_file_name"))
+unzip_files_with_password(files, working_dir)
 texts = read_files_from_folder(folder_path)
 result = create_embeddings(texts)
 points = create_points(result, texts)

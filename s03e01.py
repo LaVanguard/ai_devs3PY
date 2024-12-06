@@ -1,12 +1,11 @@
 import os
 import zipfile
 
-import requests
 from deepdiff.serialization import json_loads
 from dotenv import load_dotenv
 
 from AIService import AIService
-from messenger import verify_task
+from messenger import verify_task, get_file_content
 
 KEYWORDS_PROMPT = """Extract all the information from the document in Polish, building a map of Polish keywords related to people, 
 their fate and their occupation. Input contains paragraphs called facts. Each paragraph (fact) should have as many keywords as possible. Ignore deleted records.
@@ -33,26 +32,25 @@ Rules:
 "nazwa-pliku-03.txt":"lista, słów, kluczowych 3",
 "nazwa-pliku-NN.txt":"lista, słów, kluczowych N"
 }"""
-file_path = 'resources/s03e01'
-facts_folder_path = f'{file_path}/facts'
+working_dir = 'resources/s03e01'
+facts_folder_path = f'{working_dir}/facts'
 
 
-def retrieve_data(url) -> []:
-    zip_file_path = f"{file_path}/{os.path.basename(url)}"
-    response = requests.get(url)
-    response.raise_for_status()  # Ensure the request was successful
-
+def retrieve_data(file_name) -> []:
+    zip_file_path = os.path.join(working_dir, file_name)
+    content = get_file_content(file_name)
+    os.makedirs(working_dir, exist_ok=True)
     # Write the zip file to disk
     with open(zip_file_path, "wb") as file:
-        file.write(response.content)
+        file.write(content)
 
     # Extract the zip file
     with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-        zip_ref.extractall(file_path)
+        zip_ref.extractall(working_dir)
 
     # Clean up the zip file
     os.remove(zip_file_path)
-    return [os.path.join(file_path, f) for f in os.listdir(file_path) if f.endswith('.txt') and 'sektor' in f]
+    return [os.path.join(working_dir, f) for f in os.listdir(working_dir) if f.endswith('.txt') and 'sektor' in f]
 
 
 def keywords_from_facts() -> str:
@@ -77,7 +75,7 @@ def build_reports(files) -> str:
 
 load_dotenv()
 
-files = retrieve_data(os.environ.get("aidevs.factory_files_url"))
+files = retrieve_data(os.environ.get("aidevs.factory_files_file_name"))
 factsKeywords = keywords_from_facts()
 print("keywords:\n" + factsKeywords)
 context = f"<categorizedKeywords>${factsKeywords}</categorizedKeywords>\n" + PROMPT

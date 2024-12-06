@@ -1,7 +1,6 @@
 import os
 import zipfile
 
-import requests
 from deepdiff.serialization import json_loads
 from dotenv import load_dotenv
 
@@ -10,7 +9,7 @@ from AIStrategy import AIStrategy
 from MP3ToTextStrategy import MP3ToTextStrategy
 from PNGToTextStrategy import PNGToTextStrategy
 from TXTToTextStrategy import TXTToTextStrategy
-from messenger import verify_task
+from messenger import verify_task, get_file_content
 
 PROMPT = """You are a helpful data analyst. Analyze reports to provide categorized summary of the data.
 Each report section consists of a source file name followed by a colon and the content of the report.
@@ -26,7 +25,7 @@ Follow strictly the rules:
 Present the results structuring the content as follows:
 {"people": ["file1.txt", "file2.mp3", "file3.png"],"hardware": ["file4.txt", "file5.png", "file6.mp3"]}
 """
-file_path = 'resources/s02e04'
+working_dir = 'resources/s02e04'
 
 
 class Context():
@@ -50,23 +49,23 @@ class Context():
         return context
 
 
-def retrieve_data(url) -> []:
+def retrieve_data(file_name) -> []:
     # Fetch the content from the specified URL
-    zip_file_path = os.path.basename(url)
-    response = requests.get(url)
-    response.raise_for_status()  # Ensure the request was successful
-
+    zip_file_path = os.path.join(working_dir, file_name)
+    content = get_file_content(file_name)
+    os.makedirs(working_dir, exist_ok=True)
     # Write the zip file to disk
     with open(zip_file_path, "wb") as file:
-        file.write(response.content)
+        file.write(content)
 
     # Extract the zip file
     with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-        zip_ref.extractall(file_path)
+        zip_ref.extractall(working_dir)
 
     # Clean up the zip file
     os.remove(zip_file_path)
-    return [os.path.join(file_path, f) for f in os.listdir(file_path) if os.path.isfile(os.path.join(file_path, f))]
+    return [os.path.join(working_dir, f) for f in os.listdir(working_dir) if
+            os.path.isfile(os.path.join(working_dir, f))]
 
 
 context = Context()
@@ -75,7 +74,7 @@ context.register(PNGToTextStrategy())
 context.register(TXTToTextStrategy())
 
 load_dotenv()
-files = retrieve_data(os.environ.get("aidevs.factory_files_url"))
+files = retrieve_data(os.environ.get("aidevs.factory_files_file_name"))
 question = context.build(files)
 
 answer = AIService().answer(question, PROMPT)

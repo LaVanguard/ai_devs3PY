@@ -1,24 +1,22 @@
 import json
 import os
 
-import requests
 from dotenv import load_dotenv
 
 from AIService import AIService
-from messenger import verify_task
+from messenger import verify_task, get_file_data
 
 MODEL = AIService.AIModel.DALLE3
-file_path = f"resources/s02e03/s02e03.json"
+working_dir = f"resources/s02e03"
 
 
 def retrieve_data() -> str:
     content = ""
-
+    file_name = os.environ.get("aidevs.s02e03.file_name")
+    file_path = os.path.join(working_dir, file_name)
+    os.makedirs(working_dir, exist_ok=True)
     if not os.path.exists(file_path):
-        # Fetch the content from the specified URL
-        url = os.environ.get("aidevs.s02e03.url")
-        response = requests.get(url)
-        content = response.text
+        content = get_file_data(file_name, True)
 
         # Create the file and write the content to it
         with open(file_path, "w", encoding="utf-8") as file:

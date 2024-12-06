@@ -1,16 +1,15 @@
 import json
 import os
 
-import requests
 from dotenv import load_dotenv
 
 from AIService import AIService
-from messenger import verify_task
+from messenger import verify_task, get_file_data
 
 PROMPT = "You are helpful assistant. Provide answer to the given questions."
 
 load_dotenv()
-file_path = f"resources/s01e03/s01e03.txt"
+working_dir = f"resources/s01e03"
 
 
 def retrieve_data() -> str:
@@ -18,13 +17,12 @@ def retrieve_data() -> str:
     api_key_pattern = os.environ.get("aidevs.api_key_pattern")
 
     content = ""
-
+    file_name = os.environ.get("aidevs.s01e03.file_name")
+    file_path = os.path.join(working_dir, file_name)
+    os.makedirs(working_dir, exist_ok=True)
     if not os.path.exists(file_path):
         # Fetch the content from the specified URL
-        url = os.environ.get("aidevs.s01e03.file_url")
-        response = requests.get(url)
-        content = response.text
-
+        content = get_file_data(file_name, True)
         # Create the file and write the content to it
         with open(file_path, "w") as file:
             file.write(content)
