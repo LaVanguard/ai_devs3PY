@@ -23,7 +23,7 @@ SELECT * FROM table_name WHERE column_name = 'value'
 """
 load_dotenv()
 
-api_url = os.getenv("aidevs.apidb.url ")
+api_url = os.getenv("aidevs.apidb.url")
 api_key = os.getenv("aidevs.api_key")
 
 
@@ -36,8 +36,6 @@ def prepare_query(instruction) -> dict[str, str | None | Any]:
     }
     return query_payload
 
-
-schema = ""
 
 response = requests.post(api_url, json=prepare_query("show tables"))
 response_data = response.json()['reply']
@@ -56,6 +54,5 @@ response = requests.post(api_url, json=prepare_query(answertxt))
 data = response.json()['reply']
 answer = [item['dc_id'] for item in data]
 
-response_data = verify_task(
-    "database", answer, os.environ.get("aidevs.report_url"))
+response_data = verify_task("database", answer)
 print(response_data)

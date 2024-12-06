@@ -82,6 +82,5 @@ answer = AIService().answer(question, PROMPT)
 print("Final report: ")
 print(answer)
 
-response_data = verify_task(
-    "kategorie", json_loads(answer), os.environ.get("aidevs.report_url"))
+response_data = verify_task("kategorie", json_loads(answer))
 print(response_data)

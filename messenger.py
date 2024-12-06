@@ -5,7 +5,12 @@ import requests
 from dotenv import load_dotenv
 
 load_dotenv()
-arr = requests.get(os.environ.get("aidevs.dane_url")).text.strip().split("\n")
+
+
+def get_file_data(filename) -> str:
+    url = os.environ.get("aidevs.data_url") + filename
+    response = requests.get(url)
+    return response.text
 
 
 def verify(data, url):
@@ -13,7 +18,7 @@ def verify(data, url):
     return response.json()
 
 
-def verify_task(task, answer, url):
+def verify_task(task, answer, url=os.environ.get("aidevs.report_url")):
     json_obj = {
         "task": task,
         "apikey": os.environ.get("aidevs.api_key"),

@@ -55,5 +55,5 @@ def answer_additional_question(aiservice, item):
 
 data = retrieve_data()
 fix_data(data)
-response_data = verify_task("JSON", data, os.environ.get("aidevs.report_url"))
+response_data = verify_task("JSON", data)
 print(response_data)

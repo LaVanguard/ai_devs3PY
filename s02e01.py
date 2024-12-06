@@ -59,6 +59,5 @@ print(common_prompt_context)
 # Find answer using llm
 answer = AIService().answer(QUESTION, common_prompt_context)
 print(answer)
-response_data = verify_task(
-    "mp3", answer, os.environ.get("aidevs.report_url"))
+response_data = verify_task("mp3", answer)
 print(response_data)
