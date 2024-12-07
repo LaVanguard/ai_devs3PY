@@ -1,11 +1,31 @@
 import json
 import os
+from typing import Any
 from urllib.parse import urljoin
 
 import requests
 from dotenv import load_dotenv
+from requests import Response
 
 load_dotenv()
+
+
+def prepare_query(instruction) -> dict[str, str | None | Any]:
+    global query_payload
+    query_payload = {
+        "task": "database",
+        "apikey": os.environ.get("aidevs.api_key"),
+        "query": instruction
+    }
+    return query_payload
+
+
+def db_show_create_table(url, table) -> Response:
+    return db_query(url, f"show create table {table}")
+
+
+def db_query(url, query) -> Response:
+    return requests.post(url, json=prepare_query(query))
 
 
 def construct_data_url(filename, include_api_key):
