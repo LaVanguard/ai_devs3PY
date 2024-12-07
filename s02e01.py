@@ -2,17 +2,17 @@ import os
 import zipfile
 from io import BytesIO
 
-import requests
 from dotenv import load_dotenv
 
 from AIService import AIService
-from messenger import verify_task
-
-FOLDER = "s02e01"
+from messenger import verify_task, get_file_content
 
 PROMPT = "You are a private investigator. Try to provide answer based on the following witness testify transcriptions. You need to think out loud first to figure out who is right and who is wrong:  \n\n"
 QUESTION = "Na jakiej ulicy znajduje się uczelnia, na której wykłada Andrzej Maj?"
 SUPPORTED_AUDIO_FORMATS = (".mp3", ".wav", ".m4a")
+
+working_dir = "s02e01"
+
 load_dotenv()
 
 service = AIService()
@@ -20,12 +20,12 @@ service = AIService()
 
 # Download the ZIP file
 def retrieve_recordings():
-    if not os.path.exists(FOLDER):
-        resp = requests.get(os.environ.get("aidevs.s02e01.url"))
-        zip_file = BytesIO(resp.content)
+    if not os.path.exists(working_dir):
+        content = get_file_content("aidevs.s02e01.file_name")
+        zip_file = BytesIO(content)
         # Step 2: Unpack the ZIP file
         with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-            zip_ref.extractall(FOLDER)
+            zip_ref.extractall(working_dir)
 
 
 # Generate transcriptions from sound files
@@ -42,7 +42,7 @@ def is_supported_audio_file(file_name):
 # Build a common prompt context for all transcriptions
 def transcribe_files() -> []:
     texts = []
-    for root, dirs, files in os.walk(FOLDER):
+    for root, dirs, files in os.walk(working_dir):
         for file in files:
             if is_supported_audio_file(file):
                 file_path = os.path.join(root, file)
