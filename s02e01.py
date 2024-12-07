@@ -11,7 +11,7 @@ PROMPT = "You are a private investigator. Try to provide answer based on the fol
 QUESTION = "Na jakiej ulicy znajduje się uczelnia, na której wykłada Andrzej Maj?"
 SUPPORTED_AUDIO_FORMATS = (".mp3", ".wav", ".m4a")
 
-working_dir = "s02e01"
+working_dir = "resources/s02e01"
 
 load_dotenv()
 
@@ -21,7 +21,7 @@ service = AIService()
 # Download the ZIP file
 def retrieve_recordings():
     if not os.path.exists(working_dir):
-        content = get_file_content("aidevs.s02e01.file_name")
+        content = get_file_content(os.environ.get("aidevs.s02e01.file_name"))
         zip_file = BytesIO(content)
         # Step 2: Unpack the ZIP file
         with zipfile.ZipFile(zip_file, 'r') as zip_ref:
