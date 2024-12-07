@@ -22,8 +22,6 @@ Example output:
 {"Theft": "Yes", "Weapon": "Zakrzywiony miecz"}
 """
 
-working_dir = 'resources/s03e02'
-folder_path = f'{working_dir}/do-not-share'
 question = "W raporcie, z którego dnia znajduje się wzmianka o kradzieży prototypu broni?"
 collection_name = "weapons_test_results"
 embedding_model = "text-embedding-3-small"
@@ -32,7 +30,14 @@ date_format_underscores = "%Y_%m_%d"
 date_format_dashes = "%Y-%m-%d"
 
 
+def get_working_dir() -> str:
+    working_dir = "resources/s03e02"
+    os.makedirs(working_dir, exist_ok=True)
+    return working_dir
+
+
 def retrieve_data(file_name) -> []:
+    working_dir = get_working_dir()
     zip_file_path = os.path.join(working_dir, file_name)
     content = get_file_content(file_name)
     os.makedirs(working_dir, exist_ok=True)
@@ -50,20 +55,27 @@ def retrieve_data(file_name) -> []:
 
 
 def unzip_files_with_password(zip_files, extract_to_path):
+    extracted_folders = []
     for zip_file_path in zip_files:
         with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
             zip_ref.setpassword(os.environ.get("aidevs.factory_files_zip_password").encode())
-            zip_ref.extractall(extract_to_path)
+            zip_folder_name = os.path.splitext(os.path.basename(zip_file_path))[0]
+            extract_path = os.path.join(extract_to_path, zip_folder_name)
+            zip_ref.extractall(extract_path)
+            extracted_folders.append(extract_path)
+    return extracted_folders
 
 
-def read_files_from_folder(folder_path):
+def read_files_from_folders(folder_paths):
     file_contents = []
-    for file_name in os.listdir(folder_path):
-        if file_name.endswith('.txt'):
-            file_path = os.path.join(folder_path, file_name)
-            with open(file_path, 'r', encoding='utf-8') as file:
-                text = f"{format_date(file_name)}:{replace_new_lines(file.read())}"
-                file_contents.append(text)
+    for folder_path in folder_paths:
+        for root, dirs, files in os.walk(folder_path):
+            for file_name in files:
+                if file_name.endswith('.txt'):
+                    file_path = os.path.join(root, file_name)
+                    with open(file_path, 'r', encoding='utf-8') as file:
+                        text = f"{format_date(file_name)}:{replace_new_lines(file.read())}"
+                        file_contents.append(text)
     return file_contents
 
 
@@ -143,9 +155,9 @@ def answer_question(question, collection_name) -> str:
 
 
 load_dotenv()
-files = retrieve_data(os.environ.get("aidevs.factory_files_file_name"))
-unzip_files_with_password(files, working_dir)
-texts = read_files_from_folder(folder_path)
+file_names = retrieve_data(os.environ.get("aidevs.factory_files_file_name"))
+folders = unzip_files_with_password(file_names, get_working_dir())
+texts = read_files_from_folders(folders)
 result = create_embeddings(texts)
 points = create_points(result, texts)
 

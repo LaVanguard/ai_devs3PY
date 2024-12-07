@@ -4,32 +4,25 @@ import os
 from dotenv import load_dotenv
 
 from AIService import AIService
-from messenger import verify_task, get_file_data
+from messenger import verify_task
+from utils import get_or_create_file
 
 PROMPT = "You are helpful assistant. Provide answer to the given questions."
 
 load_dotenv()
-working_dir = f"resources/s01e03"
+
+
+def get_working_dir() -> str:
+    working_dir = f"resources/s01e03"
+    os.makedirs(working_dir, exist_ok=True)
+    return working_dir
 
 
 def retrieve_data() -> str:
     api_key = os.environ.get("aidevs.api_key")
     api_key_pattern = os.environ.get("aidevs.api_key_pattern")
-
-    content = ""
     file_name = os.environ.get("aidevs.s01e03.file_name")
-    file_path = os.path.join(working_dir, file_name)
-    os.makedirs(working_dir, exist_ok=True)
-    if not os.path.exists(file_path):
-        # Fetch the content from the specified URL
-        content = get_file_data(file_name, True)
-        # Create the file and write the content to it
-        with open(file_path, "w") as file:
-            file.write(content)
-    else:
-        # Read the content of the file
-        with open(file_path, "r") as file:
-            content = file.read()
+    content = get_or_create_file(get_working_dir(), file_name)
     return json.loads(content.replace(api_key_pattern, api_key))
 
 

@@ -11,16 +11,21 @@ PROMPT = "You are a private investigator. Try to provide answer based on the fol
 QUESTION = "Na jakiej ulicy znajduje się uczelnia, na której wykłada Andrzej Maj?"
 SUPPORTED_AUDIO_FORMATS = (".mp3", ".wav", ".m4a")
 
-working_dir = "resources/s02e01"
-
 load_dotenv()
 
 service = AIService()
 
 
+def get_working_dir() -> str:
+    working_dir = "resources/s02e01"
+    os.makedirs(working_dir, exist_ok=True)
+    return working_dir
+
+
 # Download the ZIP file
 def retrieve_recordings():
-    if not os.path.exists(working_dir):
+    working_dir = get_working_dir()
+    if len(os.listdir(working_dir)) == 0:
         content = get_file_content(os.environ.get("aidevs.s02e01.file_name"))
         zip_file = BytesIO(content)
         # Step 2: Unpack the ZIP file
@@ -42,7 +47,7 @@ def is_supported_audio_file(file_name):
 # Build a common prompt context for all transcriptions
 def transcribe_files() -> []:
     texts = []
-    for root, dirs, files in os.walk(working_dir):
+    for root, dirs, files in os.walk(get_working_dir()):
         for file in files:
             if is_supported_audio_file(file):
                 file_path = os.path.join(root, file)
