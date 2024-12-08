@@ -42,17 +42,15 @@ def create_graph_connections(connections_data):
     print("Connections created in the graph database.")
 
 
-def get_user_ids_connecting_rafal_and_barbara():
+def get_connection_chain(person1, person2):
     URI = os.getenv("aidevs.neo4j.uri")
     AUTH = (os.getenv("aidevs.neo4j.username"), os.getenv("aidevs.neo4j.password"))
 
     with GraphDatabase.driver(URI, auth=AUTH) as driver:
         with driver.session() as session:
             result = session.run(
-                """
-                MATCH p = shortestPath((u1:User {user_name: 'Rafał'})-[:CONNECTED_TO*]-(u2:User {user_name: 'Barbara'}))
-                RETURN [user IN nodes(p) | user.user_name] AS user_names
-                """
+                "MATCH p = shortestPath((u1:User {user_name: '" + person1 + "'})-[:CONNECTED_TO*]-(u2:User {user_name: '" + person2 + "'}))" +
+                "RETURN [user IN nodes(p) | user.user_name] AS user_names"
             )
             user_names = result.single()["user_names"]
             return ",".join(map(str, user_names))
@@ -73,7 +71,7 @@ response_data = response.json()['reply']
 create_graph_connections(response_data)
 print(response_data)
 
-answer = get_user_ids_connecting_rafal_and_barbara()
+answer = get_connection_chain("Rafał", "Barbara")
 print(answer)
 response_data = verify_task("connections", answer)
 print(response_data)
