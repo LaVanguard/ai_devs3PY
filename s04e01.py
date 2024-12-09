@@ -52,6 +52,8 @@ Present result in Polish language.
 """
 load_dotenv()
 
+service = AIService()
+
 
 def get_working_dir() -> str:
     working_dir = "resources/s04e01"
@@ -150,7 +152,6 @@ def summmarize_descriptions(descriptions) -> str:
 
 
 delete_historical_answers()
-service = AIService()
 
 message = communicate_with_tool("START")
 images = set(retrieve_images(message))

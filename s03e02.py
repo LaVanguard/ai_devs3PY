@@ -2,7 +2,6 @@ import os
 import zipfile
 from datetime import datetime
 
-import openai
 from deepdiff.serialization import json_loads
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient, models
@@ -24,10 +23,9 @@ Example output:
 
 question = "W raporcie, z którego dnia znajduje się wzmianka o kradzieży prototypu broni?"
 collection_name = "weapons_test_results"
-embedding_model = "text-embedding-3-small"
-openai.api_key = os.getenv("openai.api_key")
 date_format_underscores = "%Y_%m_%d"
 date_format_dashes = "%Y-%m-%d"
+service = AIService()
 
 
 def get_working_dir() -> str:
@@ -89,17 +87,6 @@ def format_date(file_name):
     return formatted_date
 
 
-# Function to create embeddings using OpenAI
-def create_embeddings(texts):
-    return openai.embeddings.create(
-        input=texts,
-        model=embedding_model
-    )
-
-
-service = AIService()
-
-
 def create_points(result, texts):
     return [
         PointStruct(
@@ -138,7 +125,7 @@ def insert_points(collection_name):
 def answer_question(question, collection_name) -> str:
     answers = qdrant.search(
         collection_name=collection_name,
-        query_vector=create_embeddings([question]).data[0].embedding,
+        query_vector=service.create_embeddings([question]).data[0].embedding,
         query_filter=models.Filter(
             must=[
                 models.FieldCondition(
@@ -158,7 +145,7 @@ load_dotenv()
 file_names = retrieve_data(os.environ.get("aidevs.factory_files_file_name"))
 folders = unzip_files_with_password(file_names, get_working_dir())
 texts = read_files_from_folders(folders)
-result = create_embeddings(texts)
+result = service.create_embeddings(texts)
 points = create_points(result, texts)
 
 qdrant = QdrantClient(

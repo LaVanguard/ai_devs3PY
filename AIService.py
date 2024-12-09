@@ -23,6 +23,11 @@ class AIService:
         HAIKU3 = "anthropic:claude-3-haiku-20240307"
         HAIKU35 = "anthropic:claude-3-5-haiku-20241022"
 
+    class EmbeddingModel(Enum):
+        TXT_3_SMALL = "text-embedding-3-small"
+        TXT_3_LARGE = "text-embedding-3-large"
+        TXT_3_ADA = "text-embedding-ada-002"
+
     PROMPT = "You are helpful assistant that can answer questions and help with tasks."
     IMG_QUESTION = "What is in the image?"
     MAX_TOKENS = 1024
@@ -181,3 +186,10 @@ class AIService:
         )
         image_url = response.data[0].url
         return image_url
+
+    # Function to create embeddings using OpenAI
+    def create_embeddings(self, texts, model=EmbeddingModel.TXT_3_SMALL.value) -> list:
+        return self._openai_client.embeddings.create(
+            input=texts,
+            model=model
+        )

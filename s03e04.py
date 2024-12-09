@@ -30,6 +30,8 @@ CITY NAME
 """
 
 load_dotenv()
+
+service = AIService()
 file_name = "resultaty.txt"
 api = {"people": os.getenv("aidevs.people.url"), "places": os.getenv("aidevs.places.url")}
 api_key = os.getenv("aidevs.api_key")
@@ -104,7 +106,7 @@ def generate_location_report(data):
 def retrive_data_from_note():
     global parsed_data
     text = get_or_create_file(get_working_dir(), os.environ.get("aidevs.s03e04.file_name"))
-    parsed_data = json_loads(AIService().answer(text, PROMPT_NOTE))
+    parsed_data = json_loads(service.answer(text, PROMPT_NOTE))
     print(parsed_data)
     return parsed_data
 
@@ -112,6 +114,6 @@ def retrive_data_from_note():
 delete_results_file()
 parsed_data = retrive_data_from_note()
 generate_location_report(parsed_data)
-city_name = AIService().answer(get_or_create_file(get_working_dir(), file_name), PROMPT)
+city_name = service.answer(get_or_create_file(get_working_dir(), file_name), PROMPT)
 print(city_name)
 verify_task("loop", city_name)
