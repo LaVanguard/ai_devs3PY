@@ -28,6 +28,7 @@ REPAIR - if the image is damaged
 NONE - if the image is fine
 
 In addition, confirm whether the picture contains a face close-up that could be used to describe a person's face mimic.   
+Do not recognize the person, just confirm if the image contains a face close-up.
 For this purpose set containsFace flag to True if the image contains a face and False otherwise.
 
 Return JSON object and nothing else.
