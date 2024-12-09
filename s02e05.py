@@ -139,6 +139,5 @@ answers = AIService().answer(questions, contextString)
 print(questions)
 print(answers)
 
-response_data = verify_task(
+verify_task(
     "arxiv", json_loads(answers), os.environ.get("aidevs.report_url"))
-print(response_data)

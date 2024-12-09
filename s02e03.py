@@ -34,5 +34,4 @@ print(data)
 img_url = AIService().generateImage(data, MODEL)
 print(img_url)
 
-response_data = verify_task("robotid", img_url)
-print(response_data)
+verify_task("robotid", img_url)

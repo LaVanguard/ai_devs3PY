@@ -84,5 +84,4 @@ print("reports:\n" + reports)
 keywords = AIService().answer(reports, context, AIService.AIModel.GPT4o)
 print(keywords)
 
-response_data = verify_task("dokumenty", json_loads(keywords))
-print(response_data)
+verify_task("dokumenty", json_loads(keywords))

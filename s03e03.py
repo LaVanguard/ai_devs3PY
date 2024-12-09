@@ -40,5 +40,4 @@ response = db_query(api_url, answertxt)
 data = response.json()['reply']
 answer = [item['dc_id'] for item in data]
 
-response_data = verify_task("database", answer)
-print(response_data)
+verify_task("database", answer)

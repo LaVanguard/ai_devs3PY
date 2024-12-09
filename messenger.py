@@ -69,5 +69,6 @@ def verify_task(task, answer, url=os.environ.get("aidevs.report_url")):
     response = requests.post(url,
                              data=data,
                              headers={"Content-Type": "application/json"},
-                             )
-    return response.json()
+                             ).json()
+    print(response)
+    return response

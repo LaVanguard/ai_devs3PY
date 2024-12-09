@@ -168,5 +168,4 @@ qdrant = QdrantClient(
 create_collection(collection_name)
 insert_points(collection_name)
 answer = answer_question(question, collection_name)
-response_data = verify_task("wektory", answer)
-print(response_data)
+verify_task("wektory", answer)

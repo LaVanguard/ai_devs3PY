@@ -73,5 +73,4 @@ print(response_data)
 
 answer = get_connection_chain("Rafał", "Barbara")
 print(answer)
-response_data = verify_task("connections", answer)
-print(response_data)
+verify_task("connections", answer)

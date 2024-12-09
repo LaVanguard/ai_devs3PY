@@ -105,17 +105,13 @@ def include_historical_answers(prompt, file_name='historical_answers.json'):
     file_path = os.path.join(get_working_dir(), file_name)
 
     historical_answers = retrieve_historical_answers(file_path)
-    # Incorporate historical answers into the prompt or use them to validate new answers
-    # For example, you can append historical answers to the prompt
     prompt_with_history = prompt + "\n<answers_history>\n" + "\n".join(
         json.dumps(answer) for answer in historical_answers) + "</answers_history>"
     return prompt_with_history
 
 
 def communicate_with_tool(command) -> str:
-    response_data = verify_task("photos", command)
-    print(response_data)
-    message = response_data.get("message")
+    message = verify_task("photos", command).get("message")
     store_historical_answer(message)
     return message
 
@@ -132,6 +128,25 @@ def describe_image(image_path, prompt) -> str:
         response_data = service.describeImage(image_base64, prompt=prompt)
         print(response_data)
         return response_data
+
+
+def get_person_descriptions(images):
+    descriptions = ""
+    for image in images:
+        descriptions += get_person_description(image)
+    return descriptions
+
+
+def get_person_description(image):
+    image_path = os.path.join(get_working_dir(), os.path.basename(image))
+    description = describe_image(image_path, PERSON_RECOGNICTION_PROMPT)
+    return description + "\n\n"
+
+
+def summmarize_descriptions(descriptions) -> str:
+    response_data = service.answer(descriptions, prompt=PERSON_RECOGNITION_SUMMARY_PROMPT)
+    print(response_data)
+    return response_data
 
 
 delete_historical_answers()
@@ -160,15 +175,6 @@ while images:
     if len(images) == initial_image_count:
         break
 
-print(useful_images)
-descriptions = ""
-
-for image in useful_images:
-    image_path = os.path.join(get_working_dir(), os.path.basename(image))
-    response_data = describe_image(image_path, PERSON_RECOGNICTION_PROMPT)
-    descriptions += response_data + "\n\n"
-
-response_data = service.answer(descriptions, prompt=PERSON_RECOGNITION_SUMMARY_PROMPT)
-print(response_data)
-response_data = verify_task("photos", response_data)
-print(response_data)
+descriptions = get_person_descriptions(useful_images)
+summary = summmarize_descriptions(descriptions)
+communicate_with_tool(summary)

@@ -186,5 +186,4 @@ with open(verify_file, 'r') as file:
 # Classify the following data: -20,-23,-2,44
 
 answer = ['01', '02', '10']
-response_data = verify_task("research", answer)
-print(response_data)
+verify_task("research", answer)
