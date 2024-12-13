@@ -43,6 +43,12 @@ def get_response(filename, include_api_key):
     return response
 
 
+def get_text(url) -> str:
+    response = requests.get(url)
+    response.raise_for_status()
+    return response.text
+
+
 def get_file_data(file_name, include_api_key=False) -> str:
     response = get_response(file_name, include_api_key)
     return response.text
