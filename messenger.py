@@ -5,6 +5,7 @@ from urllib.parse import urljoin
 
 import requests
 from dotenv import load_dotenv
+from markdownify import markdownify
 from requests import Response
 
 load_dotenv()
@@ -47,6 +48,10 @@ def get_text(url) -> str:
     response = requests.get(url)
     response.raise_for_status()
     return response.text
+
+
+def get_markdown(url) -> str:
+    return markdownify(get_text(url))
 
 
 def get_file_data(file_name, include_api_key=False) -> str:
