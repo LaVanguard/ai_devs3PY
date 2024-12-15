@@ -156,7 +156,6 @@ for key, value in data.items():
             break
         if "links" in answer:
             for link in answer["links"]:
-                if ()
                 unique_links[link["url"]] = link["summary"]
 
 # webService = WebSearchService()
