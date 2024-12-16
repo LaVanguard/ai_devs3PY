@@ -9,7 +9,7 @@ from AIService import AIService
 from messenger import get_file_data, get_markdown, verify_task
 
 load_dotenv()
-# {"url": "https://example.com", "title": "Example Title", "summary": "Example Content summary", "uuid": "example-uuid", "file": "example-file"}
+
 QUESTION_PROMPT = """
 <input>
 {"question": "sample question", "keywords": "example keywords content"}
@@ -120,6 +120,13 @@ def retrieve_data():
         return json_text
 
 
+def suggest_url(unique_links, visited) -> str:
+    prompt = url_suggestion_prompt(unique_links, visited)
+    answer_url = service.answer(value, prompt)
+    print(answer_url)
+    return answer_url
+
+
 def retrieve_keywords(url: str) -> str:
     directory = get_working_dir()
     file_content = retrieve_file(url, directory)
@@ -133,10 +140,12 @@ def retrieve_keywords(url: str) -> str:
         return keywords
 
 
-def retrieve_links(context):
-    links = service.answer(context, LINKS_PROMPT)
-    print(links)
-    return json_loads(links)
+def retrieve_links(url, keywords, links):
+    context = json_dumps({"url": url, "content": keywords})
+    answer = json_loads(service.answer(context, LINKS_PROMPT))
+    print(answer)
+    if "links" in answer:
+        update_links(answer, links)
 
 
 def update_links(context, links):
@@ -153,44 +162,26 @@ answers = {}
 visited = set()
 input_url = json_dumps({"url": base_url, "keywords": keywords})
 unique_links = {}
-answer = retrieve_links(json_dumps({"url": input_url, "content": keywords}))
-update_links(answer, unique_links)
+retrieve_links(input_url, keywords, unique_links)
+
+
+def answer_question(question, keywords) -> str:
+    input_data = json_dumps({"question": question, "content": keywords})
+    answer = json_loads(service.answer(input_data, QUESTION_PROMPT, model=AIService.AIModel.SONNET35))
+    print(answer)
+    return answer
+
 
 for key, value in data.items():
-    print(f"Question {key}: {value}")
     visited.clear()
     links_to_visit = unique_links.copy()
     while links_to_visit:
-        prompt = url_suggestion_prompt(unique_links, visited)
-        answer_url = service.answer(value, prompt)
-        print(answer_url)
-        visited.add(answer_url)
+        answer_url = suggest_url(unique_links, visited)
         keywords = retrieve_keywords(answer_url)
-        answer = retrieve_links(json_dumps({"url": answer_url, "content": keywords}))
-        if "links" in answer:
-            update_links(answer, unique_links)
-        input_data = json_dumps({"question": value, "content": keywords})
-        answer = json_loads(service.answer(input_data, QUESTION_PROMPT, model=AIService.AIModel.SONNET35))
-        print(answer)
-
+        retrieve_links(answer_url, keywords, unique_links)
+        answer = answer_question(value, keywords)
         if "answer" in answer:
             answers[key] = answer["answer"]
             break
         links_to_visit.pop(answer_url)
-
-# webService = WebSearchService()
-# markdown = webService.scrape_url("https://softo.ag3nts.org/")
-
-# print(markdown)
-#
-# file_id = upload_fine_tuning_file()
-# fine_tune_job_id = create_fine_tuning_job(file_id)
-#
-# {
-#   "01": "Podaj adres mailowy do firmy SoftoAI",
-#   "02": "Jaki jest adres interfejsu webowego do sterowania robotami zrealizowanego dla klienta jakim jest firma BanAN?",
-#   "03": "Jakie dwa certyfikaty jakości ISO otrzymała firma SoftoAI?"
-# }
-#  answers = {"01": "kontakt@softoai.whatever", "02": "https://banan.ag3nts.org/", "03": "03-ISO 9001 oraz ISO/IEC 27001"}
 response_data = verify_task("softo", answers)
-print(response_data)
