@@ -6,31 +6,48 @@ from deepdiff.serialization import json_loads, json_dumps
 from dotenv import load_dotenv
 
 from AIService import AIService
-from messenger import get_file_data, get_markdown
+from messenger import get_file_data, get_markdown, verify_task
 
 load_dotenv()
 # {"url": "https://example.com", "title": "Example Title", "summary": "Example Content summary", "uuid": "example-uuid", "file": "example-file"}
-CRAWLER_PROMPT = f"""
+QUESTION_PROMPT = """
 <input>
-{{"url": "https://example.com", "question": "sample question", "markdown": "example markdown content"}}
-{{"url": "https://example.com", "markdown": "example markdown content"}}
+{"question": "sample question", "keywords": "example keywords content"}
 <input>
 
 You are a helpful assistant.
-Your job is to extract all relative urls that are in the given markdown content and provide brief summary of the content.
 Prepare result in the JSON format. 
+_thinking:
+Think twice before you provide answer. It is important to provide accurate information. Do not answer if you feel the information is not correct.
 <rules>
-- For each extracted url provide brief summary what the content is about.
-- Convert urls to absolute urls by prepending them with the base url.
-- If there is a question in the input, provide the answer in the output.
-- Never provide answer if you don't know it
+- If there is a question in the input, provide concise answer in the output, for example when asked for URL, provide only URL.
+- Make sure you provide correct URL as an answer, for instance if asked about website interface address, make sure you provide correct interface URL that is not a link to portfolio.
+- NEVER provide answer if you cannot find it in the text. Do not create attribute 'answer' in such a case.
 - NEVER include explanations or text outside the JSON structure
 </rules>
 
 <sample_outputs>
-{{"links": [{{"url": "https://example.com", "summary": "A sample web page"}}, {{"url": "https://example.com/site", "summary": "A sample site"}}]}}
-{{"answer": "answer to the question from input", "links": [{{"url": "https://wikipedia.org/article", "summary": "Wikipedia article page"}}]}}
+{"answer": "answer to the question from input"}
+{"no_answer": "There is insufficient information to answer the question."}
+</sample_outputs>
+"""
 
+LINKS_PROMPT = """
+<input>
+{"url": "https://example.com", "content": "example keywords content"}}
+<input>
+You are a helpful assistant.
+Your job is to extract all urls that are in the given markdown content and provide brief summary of the content.
+Prepare result in the JSON format. 
+<rules>
+- For each extracted url provide brief summary in Polish what the content is about.
+- Convert urls to absolute urls by prepending them with the base url.
+- NEVER include explanations or text outside the JSON structure
+</rules>
+
+<sample_outputs>
+{"links": [{"url": "https://example.com", "summary": "A sample web page"}, {"url": "https://example.com/site", "summary": "A sample site"}]}
+{"links": [{"url": "https://wikipedia.org/article", "summary": "Wikipedia article page"}]}
 </sample_outputs>
 """
 
@@ -45,29 +62,19 @@ def url_suggestion_prompt(links, visited):
 {context}
 </context>
 You are a helpful assistant. Your task is to choose the correct url from the list of suggestions in order to
-answer the question. Provide the correct url as the output.
+answer the question as best as possible. Provide the correct url as the output.
 """
 
 
-QUESTION_PROMPT = """
-{{"url": "https://example.com", "question": "sample question", "markdown": "example markdown content"}}
-You are a helpful assistant.
-
-Your job is to provide concise answer to the given question.
+SUMMARY_PROMPT = """You are an experience analyst. Analyze the given text and provide the most important information.
+Focus on the specific facts, avoid general terms.
 <rules>
-- Your answer should be clear and concise.
-- Your answer should be based on the information available on the website.
-- Use as few words as possible.
-</rules?
-"""
-
-WEBSITE_SUMMARY_PROMPT = f"""
-   
-"""
-
-PROMPT1 = f""""
-You are a helpful assistant from the SoftoAI company. You work with the SoftoAI website at {os.environ.get("aidevs.s04e03.url")}.
-Browse information available at the website to answer given question. Follow links to available on the website 
+- Be specific and concise - provide summary with the most important information.
+- IMPORTANT: Pay attention to details and avoid general terms.
+- Focus on specific facts.
+- Collect all the urls.
+- Use Polish language
+</rules>
 """
 
 
@@ -101,19 +108,19 @@ def retrieve_file(url: str, directory: str) -> str:
 # Download the ZIP file
 def retrieve_data():
     working_dir = get_working_dir()
-    if len(os.listdir(working_dir)) == 0:
-        file_name = os.environ.get("aidevs.s04e03.file_name")
+    file_name = os.environ.get("aidevs.s04e03.file_name")
+    file_path = os.path.join(get_working_dir(), file_name)
+    if os.path.exists(file_path):
+        with open(file_path, 'r', encoding='utf-8') as file:
+            return json.load(file)
+    else:
         json_text = json_loads(get_file_data(file_name, True))
-        file_path = os.path.join(get_working_dir(), file_name)
         with open(file_path, 'w', encoding='utf-8') as file:
             json.dump(json_text, file, ensure_ascii=False, indent=2)
         return json_text
-    else:
-        with open(os.path.join(working_dir, os.environ.get("aidevs.s04e03.file_name")), 'r', encoding='utf-8') as file:
-            return json.load(file)
 
 
-def retrieve_markdown(url: str) -> str:
+def retrieve_keywords(url: str) -> str:
     directory = get_working_dir()
     file_content = retrieve_file(url, directory)
 
@@ -121,42 +128,55 @@ def retrieve_markdown(url: str) -> str:
         return file_content
     else:
         markdown = get_markdown(url)
-        store_file(url, markdown, directory)
-        return markdown
+        keywords = service.answer(markdown, SUMMARY_PROMPT)
+        store_file(url, keywords, directory)
+        return keywords
+
+
+def retrieve_links(context):
+    links = service.answer(context, LINKS_PROMPT)
+    print(links)
+    return json_loads(links)
+
+
+def update_links(context, links):
+    for link in context["links"]:
+        links[link["url"]] = link["summary"]
 
 
 base_url = os.environ.get("aidevs.s04e03.url")
 service = AIService()
-markdown = retrieve_markdown(base_url)
+keywords = retrieve_keywords(base_url)
 
 data = retrieve_data()
 answers = {}
 visited = set()
-input_url = json_dumps({"url": base_url, "markdown": markdown})
-context = json_loads(service.answer(input_url, CRAWLER_PROMPT))
-print(context)
+input_url = json_dumps({"url": base_url, "keywords": keywords})
 unique_links = {}
-for link in context["links"]:
-    unique_links[link["url"]] = link["summary"]
+answer = retrieve_links(json_dumps({"url": input_url, "content": keywords}))
+update_links(answer, unique_links)
 
 for key, value in data.items():
     print(f"Question {key}: {value}")
     visited.clear()
-    while unique_links:
+    links_to_visit = unique_links.copy()
+    while links_to_visit:
         prompt = url_suggestion_prompt(unique_links, visited)
         answer_url = service.answer(value, prompt)
         print(answer_url)
         visited.add(answer_url)
-        markdown = retrieve_markdown(answer_url)
-        input_data = json_dumps({"url": answer_url, "question": value, "markdown": markdown})
-        answer = json_loads(service.answer(input_data, CRAWLER_PROMPT))
+        keywords = retrieve_keywords(answer_url)
+        answer = retrieve_links(json_dumps({"url": answer_url, "content": keywords}))
+        if "links" in answer:
+            update_links(answer, unique_links)
+        input_data = json_dumps({"question": value, "content": keywords})
+        answer = json_loads(service.answer(input_data, QUESTION_PROMPT, model=AIService.AIModel.SONNET35))
         print(answer)
+
         if "answer" in answer:
             answers[key] = answer["answer"]
             break
-        if "links" in answer:
-            for link in answer["links"]:
-                unique_links[link["url"]] = link["summary"]
+        links_to_visit.pop(answer_url)
 
 # webService = WebSearchService()
 # markdown = webService.scrape_url("https://softo.ag3nts.org/")
@@ -171,6 +191,6 @@ for key, value in data.items():
 #   "02": "Jaki jest adres interfejsu webowego do sterowania robotami zrealizowanego dla klienta jakim jest firma BanAN?",
 #   "03": "Jakie dwa certyfikaty jakości ISO otrzymała firma SoftoAI?"
 # }
-# answer = {"01": "kontakt@softoai.whatever", "02": "https://banan.ag3nts.org/", "03": "03-ISO 9001 oraz ISO/IEC 27001"}
-# response_data = verify_task("softo", answer)
-# print(response_data)
+#  answers = {"01": "kontakt@softoai.whatever", "02": "https://banan.ag3nts.org/", "03": "03-ISO 9001 oraz ISO/IEC 27001"}
+response_data = verify_task("softo", answers)
+print(response_data)
