@@ -5,7 +5,7 @@ from deepdiff.serialization import json_loads
 from dotenv import load_dotenv
 
 from AIService import AIService
-from messenger import verify_task, get_file_content
+from messenger import verify_task, get_file_bytes
 
 KEYWORDS_PROMPT = """Extract all the information from the document in Polish, building a map of Polish keywords related to people, 
 their fate and their occupation. Input contains paragraphs called facts. Each paragraph (fact) should have as many keywords as possible. Ignore deleted records.
@@ -38,7 +38,7 @@ facts_folder_path = f'{working_dir}/facts'
 
 def retrieve_data(file_name) -> []:
     zip_file_path = os.path.join(working_dir, file_name)
-    content = get_file_content(file_name)
+    content = get_file_bytes(file_name)
     os.makedirs(working_dir, exist_ok=True)
     # Write the zip file to disk
     with open(zip_file_path, "wb") as file:

@@ -6,7 +6,7 @@ from deepdiff.serialization import json_loads, json_dumps
 from dotenv import load_dotenv
 
 from AIService import AIService
-from messenger import get_file_data, get_markdown, verify_task
+from messenger import get_file_text, get_markdown, verify_task
 
 load_dotenv()
 
@@ -114,7 +114,7 @@ def retrieve_data():
         with open(file_path, 'r', encoding='utf-8') as file:
             return json.load(file)
     else:
-        json_text = json_loads(get_file_data(file_name, True))
+        json_text = json_loads(get_file_text(file_name, True))
         with open(file_path, 'w', encoding='utf-8') as file:
             json.dump(json_text, file, ensure_ascii=False, indent=2)
         return json_text

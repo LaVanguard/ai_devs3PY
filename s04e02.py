@@ -6,7 +6,7 @@ from io import BytesIO
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from messenger import get_file_content
+from messenger import get_file_bytes
 from messenger import verify_task
 
 PRMOPT = """
@@ -61,7 +61,7 @@ def get_working_dir() -> str:
 def retrieve_data():
     working_dir = get_working_dir()
     if len(os.listdir(working_dir)) == 0:
-        content = get_file_content(os.environ.get("aidevs.s04e02.file_name"))
+        content = get_file_bytes(os.environ.get("aidevs.s04e02.file_name"))
         zip_file = BytesIO(content)
         # Step 2: Unpack the ZIP file
         with zipfile.ZipFile(zip_file, 'r') as zip_ref:

@@ -9,7 +9,7 @@ from AIService import AIService
 from AIStrategy import AIStrategy
 from MP3ToTextStrategy import MP3ToTextStrategy
 from PNGToTextStrategy import PNGToTextStrategy
-from messenger import verify_task, get_file_data, get_file_content
+from messenger import verify_task, get_file_text, get_file_bytes
 
 ARTICLE_URL = os.environ.get("aidevs.s02e05.article_url")
 PROMPT = """You are a helpful data analyst. Analyze the provided article to answer the questions given in the following format
@@ -51,7 +51,7 @@ class Context():
     def build(self, article_file_name: str) -> str:
         context = PROMPT
         sections = []
-        soup = BeautifulSoup(get_file_data(article_file_name), 'html.parser')
+        soup = BeautifulSoup(get_file_text(article_file_name), 'html.parser')
         soup = self.strip_p_tags(soup)
         container = soup.find('div', class_='container')
         if not container:
@@ -112,7 +112,7 @@ class Context():
 
 
 def retrieve_and_save_file(resource_name) -> str:
-    content = get_file_content(resource_name)
+    content = get_file_bytes(resource_name)
     file_name = os.path.basename(resource_name)
     file_path = os.path.join(working_dir, file_name)
     os.makedirs(working_dir, exist_ok=True)
@@ -129,7 +129,7 @@ def retrieve_text(article_url) -> []:
 
 
 load_dotenv()
-questions = get_file_data(os.environ.get("aidevs.s02e05.questions_file_name"), True)
+questions = get_file_text(os.environ.get("aidevs.s02e05.questions_file_name"), True)
 context = Context()
 context.register(MP3ToTextStrategy())
 context.register(PNGToTextStrategy())

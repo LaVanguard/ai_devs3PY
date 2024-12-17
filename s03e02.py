@@ -9,7 +9,7 @@ from qdrant_client.http.models import PointStruct
 from qdrant_client.models import VectorParams, Distance
 
 from AIService import AIService
-from messenger import verify_task, get_file_content
+from messenger import verify_task, get_file_bytes
 
 PROMPT = """You are a helpful assistant that analyse Polish text and provide 2 information:
 1. 'Yes' only if you detect a mention about a theft in the given report, 'No' otherwise.
@@ -37,7 +37,7 @@ def get_working_dir() -> str:
 def retrieve_data(file_name) -> []:
     working_dir = get_working_dir()
     zip_file_path = os.path.join(working_dir, file_name)
-    content = get_file_content(file_name)
+    content = get_file_bytes(file_name)
     os.makedirs(working_dir, exist_ok=True)
     # Write the zip file to disk
     with open(zip_file_path, "wb") as file:

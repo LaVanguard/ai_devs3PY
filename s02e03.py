@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 
 from AIService import AIService
-from messenger import verify_task, get_file_data
+from messenger import verify_task, get_file_text
 
 MODEL = AIService.AIModel.DALLE3
 working_dir = f"resources/s02e03"
@@ -16,7 +16,7 @@ def retrieve_data() -> str:
     file_path = os.path.join(working_dir, file_name)
     os.makedirs(working_dir, exist_ok=True)
     if not os.path.exists(file_path):
-        content = get_file_data(file_name, True)
+        content = get_file_text(file_name, True)
 
         # Create the file and write the content to it
         with open(file_path, "w", encoding="utf-8") as file:

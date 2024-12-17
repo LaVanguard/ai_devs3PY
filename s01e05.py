@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 
 from AIService import AIService
-from messenger import verify_task, get_file_data
+from messenger import verify_task, get_file_text
 
 PROMPT = """You are a police censor. Your job is to return the censored content you receive.
          It's very important to return the exact same content, in the same form, and without any comments. 
@@ -33,7 +33,7 @@ PROMPT = """You are a police censor. Your job is to return the censored content 
 
 load_dotenv()
 
-data = get_file_data(os.environ.get("aidevs.s01e05.file_name"), True)
+data = get_file_text(os.environ.get("aidevs.s01e05.file_name"), True)
 print(data)
 message = AIService().answer(data, PROMPT, AIService.AIModel.GEMMA2)
 print(message)

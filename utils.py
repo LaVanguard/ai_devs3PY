@@ -1,6 +1,6 @@
 import os
 
-from messenger import get_file_data
+from messenger import get_file_text
 
 
 def get_or_create_file(working_dir, file_name):
@@ -8,7 +8,7 @@ def get_or_create_file(working_dir, file_name):
     file_path = os.path.join(working_dir, file_name)
     if not os.path.exists(file_path):
         # Fetch the content from the specified URL
-        content = get_file_data(file_name)
+        content = get_file_text(file_name)
         # Create the file and write the content to it
         with open(file_path, "w") as file:
             file.write(content)

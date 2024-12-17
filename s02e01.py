@@ -5,7 +5,7 @@ from io import BytesIO
 from dotenv import load_dotenv
 
 from AIService import AIService
-from messenger import verify_task, get_file_content
+from messenger import verify_task, get_file_bytes
 
 PROMPT = "You are a private investigator. Try to provide answer based on the following witness testify transcriptions. You need to think out loud first to figure out who is right and who is wrong:  \n\n"
 QUESTION = "Na jakiej ulicy znajduje się uczelnia, na której wykłada Andrzej Maj?"
@@ -26,7 +26,7 @@ def get_working_dir() -> str:
 def retrieve_recordings():
     working_dir = get_working_dir()
     if len(os.listdir(working_dir)) == 0:
-        content = get_file_content(os.environ.get("aidevs.s02e01.file_name"))
+        content = get_file_bytes(os.environ.get("aidevs.s02e01.file_name"))
         zip_file = BytesIO(content)
         # Step 2: Unpack the ZIP file
         with zipfile.ZipFile(zip_file, 'r') as zip_ref:

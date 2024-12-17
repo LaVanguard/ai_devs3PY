@@ -54,12 +54,12 @@ def get_markdown(url) -> str:
     return markdownify(get_text(url))
 
 
-def get_file_data(file_name, include_api_key=False) -> str:
+def get_file_text(file_name, include_api_key=False) -> str:
     response = get_response(file_name, include_api_key)
     return response.text
 
 
-def get_file_content(file_name, include_api_key=False) -> bytes:
+def get_file_bytes(file_name, include_api_key=False) -> bytes:
     response = get_response(file_name, include_api_key)
     return response.content
 
