@@ -10,7 +10,6 @@ from messenger import get_file_bytes
 from messenger import verify_task
 
 PRMOPT = """
-
 Sample output:
 
 [
@@ -30,32 +29,6 @@ def get_working_dir() -> str:
     os.makedirs(working_dir, exist_ok=True)
     return working_dir
 
-
-#
-# def upload_fine_tuning_file() -> str:
-#     response = client.files.create(
-#         file=open(os.path.join(get_working_dir(), "fine_tuning_data.jsonl"), "rb"),
-#         purpose='fine-tune'
-#     )
-#     file_id = response.id
-#     print(f"Uploaded file ID: {file_id}")
-#     return file_id
-#
-#
-# def create_fine_tuning_job(file_id) -> str:
-#     fine_tune_response = client.fine_tunes.create(
-#         training_file=file_id
-#     )
-#     fine_tune_job_id = fine_tune_response['id']
-#     print(f"Fine-tune job ID: {fine_tune_job_id}")
-#     return fine_tune_job_id
-#
-#
-# def get_status(fine_tune_job_id):
-#     status = client.fine_tune.retrieve(id=fine_tune_job_id)
-#     print(f"Status: {status['status']}")
-#     return status
-#
 
 # Download the ZIP file
 def retrieve_data():
@@ -170,20 +143,6 @@ create_chat_fine_tuning_data(correct_file, incorrect_file, chat_output)
 model_name = os.environ.get("aidevs.s04e02.model_name")
 with open(verify_file, 'r') as file:
     lines = file.readlines()
-    # classify_verification_file(lines, model_name)
-#
-# file_id = upload_fine_tuning_file()
-# fine_tune_job_id = create_fine_tuning_job(file_id)
-# Classify the following data: 12,100,3,39
-# Classify the following data: -41,75,67,-25
-# Classify the following data: 78,38,65,2
-# Classify the following data: 5,64,67,30
-# Classify the following data: 33,-21,16,-72
-# Classify the following data: 99,17,69,61
-# Classify the following data: 17,-42,-65,-43
-# Classify the following data: 57,-83,-54,-43
-# Classify the following data: 67,-55,-6,-32
-# Classify the following data: -20,-23,-2,44
 
 answer = ['01', '02', '10']
 verify_task("research", answer)
