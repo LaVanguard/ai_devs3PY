@@ -54,6 +54,7 @@ def extract_text_from_pdf(file_path):
 
 pdf_file_path = retrieve_pdf(os.environ.get("aidevs.s04e05.notepad_file_name"))
 retrieve_data(os.environ.get("aidevs.s04e05.file_name"))
+# response
 # pdf_text = extract_text_from_pdf(pdf_file_path)
 # print(pdf_text)
 # answer = {"01": "2019", "02": "Adam",
